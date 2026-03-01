@@ -1,0 +1,103 @@
+C:.
+│   .gitignore
+│   app.py
+│   ASI_Termos_de_Uso_PT.docx
+│   ASI_Terms_of_Use_EN.docx
+│   Credits.txt
+│   INSTRUCTIONS.md
+│   launch.bat
+│   LICENSE
+│   README.md
+│   requirements.txt
+│
+├───data
+│   ├───curated
+│   │   └───attribute_tables
+│   │       │   data_table.txt
+│   │       │   data_table.txt.xml
+│   │       │   Data_Table.xls
+│   │       │   schema.ini
+│   │       │
+│   │       └───info
+│   │               arc.dir
+│   │
+│   └───raw
+│       ├───apac_exports
+│       │       precipitacao_nordeste.csv
+│       │       precipitacao_pernambuco.csv
+│       │
+│       ├───arcmap_exports
+│       │       bairros_cabo_oficial.json
+│       │       br_uf_2024.json
+│       │       Data_Table.xls
+│       │       mdt_points_tables.txt
+│       │       pe_municipios_2024.json
+│       │
+│       ├───events
+│       │       defesacivil_pe_consolidado.csv
+│       │       historico_inundacoes.csv
+│       │
+│       └───qgis_exports
+│               Hidrografia_Pernambuco.geojson
+│
+├───docs
+│   ├───academic_context
+│   │       credits.md
+│   │       DTM_doc.md
+│   │       institutions.md
+│   │       project_origin.md
+│   │       timeline.md
+│   │
+│   ├───ethics_and_use
+│   ├───methodology
+│   ├───project_overview
+│   │       estructure.txt.txt
+│   │
+│   └───roadmap
+├───outputs
+│   ├───charts
+│   ├───dashboards
+│   ├───maps
+│   └───reports
+├───references
+│       articles.md
+│       links.md
+│       technical_docs.md
+│
+├───src
+│   ├───analysis
+│   │   │   analytics.py
+│   │   │
+│   │   └───__pycache__
+│   │           analytics.cpython-314.pyc
+│   │
+│   ├───dashboard
+│   ├───processing
+│   │   │   data_loader.py
+│   │   │
+│   │   └───__pycache__
+│   │           data_loader.cpython-314.pyc
+│   │
+│   ├───scripts
+│   │   │   utilits.py
+│   │   │
+│   │   └───__pycache__
+│   │           utilits.cpython-314.pyc
+│   │
+│   └───sigweb
+│       │   components.py
+│       │   config.py
+│       │   documentation.py
+│       │   map_engine.py
+│       │   report_generator.py
+│       │
+│       └───__pycache__
+│               analytics.cpython-314.pyc
+│               components.cpython-314.pyc
+│               config.cpython-314.pyc
+│               documentation.cpython-314.pyc
+│               map_engine.cpython-314.pyc
+│               report_generator.cpython-314.pyc
+│
+└───System Version
+        ASI_CHANGELOG_v2.8.docx

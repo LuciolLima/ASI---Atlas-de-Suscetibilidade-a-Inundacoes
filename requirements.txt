@@ -1,0 +1,20 @@
+# ══════════════════════════════════════════════════════════════
+#  ASI | Atlas de Suscetibilidade a Inundações
+#  Dependências do Projeto - requirements.txt
+#  Python >= 3.12 recomendado
+# ══════════════════════════════════════════════════════════════
+
+# --- Interface Web (SIGWeb / Dashboard) ---
+streamlit>=1.35.0           # Framework principal da aplicação
+streamlit-folium>=0.20.0    # Integração Folium ↔ Streamlit
+
+# --- Cartografia e Geoprocessamento ---
+folium>=0.16.0              # Renderização de mapas interativos (Leaflet.js)
+pyproj>=3.6.0               # Reprojeção de coordenadas (UTM ↔ WGS84)
+geopy>=2.4.0                # Cálculo de distâncias geodésicas (buffer 500m)
+
+# --- Manipulação e Análise de Dados ---
+pandas>=2.2.0               # ETL, filtragem e classificação vetorial
+
+# --- Visualização Estatística ---
+plotly>=5.22.0              # Gráficos interativos (pizza, histograma, scatter, bar)
