@@ -18,3 +18,6 @@ pandas>=2.2.0               # ETL, filtragem e classificação vetorial
 
 # --- Visualização Estatística ---
 plotly>=5.22.0              # Gráficos interativos (pizza, histograma, scatter, bar)
+
+# --- Integração com APIs Externas ---
+requests>=2.31.0            # Requisições HTTP (Open-Meteo API — precipitação tempo real)

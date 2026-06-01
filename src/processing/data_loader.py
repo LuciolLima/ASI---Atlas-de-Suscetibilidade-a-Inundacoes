@@ -4,11 +4,13 @@ Versão: 2.8 — Precipitação, Eventos Históricos e Índice de Risco por Bair
 """
 
 import pandas as pd
+import unicodedata
 from pyproj import Transformer
 import streamlit as st
 import os
 from src.sigweb import config
-
+import requests
+from datetime import date
 
 # ══════════════════════════════════════════════════════════════
 #  DATASET PRINCIPAL (v2.7 — inalterado)
@@ -265,3 +267,115 @@ def load_defesa_civil() -> pd.DataFrame:
     except Exception as e:
         st.warning(f"Defesa Civil: erro de leitura — {e}")
         return pd.DataFrame()
+    
+# ══════════════════════════════════════════════════════════════
+#  CORRELAÇÃO CRUZADA DE DATASETS — v2.9
+# ══════════════════════════════════════════════════════════════
+
+def _normalizar_municipio(nome: str) -> str:
+    """
+    Normaliza nome de município para join entre datasets.
+    Remove acentos, converte para maiúsculo, strip.
+    Ex: 'Caruarú' → 'CARUARU' | 'água Preta' → 'AGUA PRETA'
+    """
+    if not isinstance(nome, str):
+        return ''
+    nfkd = unicodedata.normalize('NFKD', nome)
+    sem_acento = ''.join(c for c in nfkd if not unicodedata.combining(c))
+    return sem_acento.upper().strip()
+
+
+def correlacionar_datasets(
+    df_twi: pd.DataFrame,
+    df_dc: pd.DataFrame,
+    df_precip: pd.DataFrame = None
+) -> pd.DataFrame:
+    """
+    Cruza TWI × Defesa Civil × Precipitação por município.
+
+    Parâmetros:
+        df_twi    → retorno de load_geospatial_dataset()
+        df_dc     → retorno de load_defesa_civil()
+        df_precip → retorno de load_precipitacao() (opcional)
+
+    Retorna DataFrame com uma linha por município contendo:
+        municipio, twi_medio, pct_critico_alto, ira_medio,
+        total_pontos_twi, dh_total, dm_total, severidade_dc,
+        precip_media_mm (se disponível)
+    """
+
+    if df_twi.empty or df_dc.empty:
+        return pd.DataFrame()
+
+    PESOS = {'CRITICO': 5, 'ALTO': 4, 'MODERADO': 3, 'BAIXO': 2, 'MUITO_BAIXO': 1}
+
+    # ── 1. Agrega TWI por município ────────────────────────────
+    twi = df_twi.copy()
+    twi['Classe_Risco_Cod'] = twi['Classe_Risco_Cod'].astype(str)
+    twi['_peso'] = twi['Classe_Risco_Cod'].map(PESOS).fillna(1)
+    twi['_municipio'] = twi['NM_MUN'].apply(_normalizar_municipio)
+
+    agg_twi = twi.groupby('_municipio').agg(
+        twi_medio        = ('twi',             'mean'),
+        ira_medio        = ('_peso',            'mean'),
+        total_pontos_twi = ('twi',             'count'),
+        criticos         = ('Classe_Risco_Cod', lambda x: (x == 'CRITICO').sum()),
+        altos            = ('Classe_Risco_Cod', lambda x: (x == 'ALTO').sum()),
+    ).reset_index()
+
+    agg_twi['pct_critico_alto'] = (
+        (agg_twi['criticos'] + agg_twi['altos']) / agg_twi['total_pontos_twi'] * 100
+    ).round(1)
+    agg_twi['twi_medio'] = agg_twi['twi_medio'].round(2)
+    agg_twi['ira_medio'] = agg_twi['ira_medio'].round(2)
+
+    # ── 2. Normaliza Defesa Civil ──────────────────────────────
+    dc = df_dc.copy()
+    dc['_municipio'] = dc['municipio'].apply(_normalizar_municipio)
+
+    cols_dc = ['_municipio', 'severidade', 'dh_total', 'dm_total',
+               'dh_obitos', 'dh_desabrigados', 'dh_desalojados']
+    cols_dc = [c for c in cols_dc if c in dc.columns]
+    dc = dc[cols_dc]
+
+    # ── 3. Merge TWI × Defesa Civil ───────────────────────────
+    merged = agg_twi.merge(dc, on='_municipio', how='inner')
+    merged = merged.rename(columns={'_municipio': 'municipio'})
+
+    # ── 4. Precipitação (opcional) ────────────────────────────
+    if df_precip is not None and not df_precip.empty:
+        precip = df_precip.copy()
+
+        if 'estacao' in precip.columns:
+            precip['_municipio'] = (
+                precip['estacao']
+                .str.extract(r'^([^(]+)')[0]
+                .apply(_normalizar_municipio)
+            )
+
+            col_mm = next(
+                (c for c in precip.columns if 'precip' in c or '_mm' in c),
+                None
+            )
+            if col_mm:
+                agg_precip = (
+                    precip[precip['_municipio'] != '']
+                    .groupby('_municipio')[col_mm]
+                    .agg(
+                        precip_media_mm='mean',
+                        precip_max_mm='max',
+                        precip_total_mm='sum'
+                    )
+                    .reset_index()
+                    .rename(columns={'_municipio': 'municipio'})
+                )
+                agg_precip['precip_media_mm']  = agg_precip['precip_media_mm'].round(1)
+                agg_precip['precip_max_mm']    = agg_precip['precip_max_mm'].round(1)
+                agg_precip['precip_total_mm']  = agg_precip['precip_total_mm'].round(1)
+
+                merged = merged.merge(agg_precip, on='municipio', how='left')
+    
+    # ── 5. Ordena por risco ───────────────────────────────────
+    merged = merged.sort_values('ira_medio', ascending=False).reset_index(drop=True)
+
+    return merged

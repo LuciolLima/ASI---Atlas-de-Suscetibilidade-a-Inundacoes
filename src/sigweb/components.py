@@ -1,6 +1,6 @@
 """
 SISTEMA ASI - COMPONENTES DE UI
-Versão: 2.8 — Cluster, Hidrografia, Eventos, Ranking, Exportação
+Versão: 3.0 — Hub de Integração de Dados Externos (API Hub)
 """
 
 import streamlit as st
@@ -226,171 +226,65 @@ div[data-testid="stMetric"] [data-testid="stMetricValue"] {
     font-weight: 500 !important;
     color: var(--asi-text-hi) !important;
 }
-
-/* ── Alertas com pulse ─────────────────────────────────── */
-@keyframes asi-pulse-error {
-    0%, 100% { border-left-color: #e74c3c; }
-    50%       { border-left-color: #ff6b6b; box-shadow: 0 0 8px rgba(231,76,60,0.4); }
-}
-@keyframes asi-pulse-warn {
-    0%, 100% { border-left-color: #e67e22; }
-    50%       { border-left-color: #f39c12; box-shadow: 0 0 8px rgba(230,126,34,0.3); }
-}
-div[data-testid="stAlert"][data-baseweb="notification"] {
-    border-radius: 2px !important;
-    font-family: var(--asi-sans) !important;
-    font-size: 0.83rem !important;
-}
-div[data-testid="stAlert"].st-emotion-cache-1wmy9n5 {
-    animation: asi-pulse-error 2s ease-in-out infinite !important;
-}
-
-/* ── Dataframe ─────────────────────────────────────────── */
-div[data-testid="stDataFrame"] {
-    border: 1px solid var(--asi-border) !important;
-    border-radius: 2px !important;
-}
-
-/* ── Tabs ──────────────────────────────────────────────── */
-div[data-testid="stTabs"] button {
-    font-family: var(--asi-mono) !important;
-    font-size: 0.74rem !important;
-    letter-spacing: 0.08em !important;
-    text-transform: uppercase !important;
-    color: var(--asi-text-dim) !important;
-    transition: color 0.2s ease !important;
-}
-div[data-testid="stTabs"] button:hover {
-    color: var(--asi-blue-hi) !important;
-}
-div[data-testid="stTabs"] button[aria-selected="true"] {
-    color: var(--asi-cyan) !important;
-    border-bottom-color: var(--asi-cyan) !important;
-}
-
-/* ── Subexpanders — nível 2 ────────────────────────────── */
-div[data-testid="stExpander"] div[data-testid="stExpander"] {
-    background: #060a0e !important;
-    border: 1px solid #111d27 !important;
-    border-left: 2px solid #1c2a38 !important;
-    border-radius: 0 !important;
-    margin: 2px 0 !important;
-}
-div[data-testid="stExpander"] div[data-testid="stExpander"]:hover {
-    border-left-color: var(--asi-blue-dim) !important;
-}
-div[data-testid="stExpander"] div[data-testid="stExpander"] details summary p {
-    font-size: 0.70rem !important;
-    color: var(--asi-text-dim) !important;
-    letter-spacing: 0.14em !important;
-}
-div[data-testid="stExpander"] div[data-testid="stExpander"]:hover details summary p {
-    color: var(--asi-blue-hi) !important;
-}
-div[data-testid="stExpander"] div[data-testid="stExpander"][open] details summary p {
-    color: var(--asi-cyan) !important;
-}
-
-
-div[data-testid="stDownloadButton"] button {
-    background: transparent !important;
-    border: 1px solid var(--asi-blue-dim) !important;
-    color: var(--asi-cyan) !important;
-    font-family: var(--asi-mono) !important;
-    font-size: 0.76rem !important;
-    letter-spacing: 0.1em !important;
-    text-transform: uppercase !important;
-    border-radius: 2px !important;
-    transition: all 0.2s ease !important;
-}
-div[data-testid="stDownloadButton"] button:hover {
-    background: var(--asi-blue-dim) !important;
-    box-shadow: 0 0 12px rgba(0, 180, 216, 0.2) !important;
-}
 </style>
 """
 
 
-def render_top_navigation(df):
+def render_top_navigation(df_raw):
+    """Barra de navegação superior com controles de mapa e filtros."""
     st.markdown(ASI_CSS, unsafe_allow_html=True)
-
-    c_tools, c_filters, c_meta = st.columns([1, 1.2, 1])
     config_dict = {}
 
-    # ── 1. CARTOGRAFIA ───────────────────────────────────────
-    with c_tools:
-        with st.expander("// CARTOGRAFIA", expanded=False):
+    c_mapa, c_filter, c_meta = st.columns([1.2, 1.5, 1.3])
 
-            # ── Submenu: Tileset Base ─────────────────────
-            with st.expander("TILESET BASE", expanded=False):
-                t_padrao = st.toggle("OSM · Topográfico",     value=True)
-                t_claro  = st.toggle("CartoDB · Positron",    value=False)
-                t_escuro = st.toggle("CartoDB · Dark Matter", value=False)
+    # ── 1. MODELO CARTOGRÁFICO ───────────────────────────────
+    with c_mapa:
+        with st.expander("// MODELO CARTOGRÁFICO", expanded=False):
+            estilo = st.radio(
+                "Base Cartográfica",
+                options=["PADRAO", "DARK", "CLARO", "NONE"],
+                horizontal=True,
+                index=0
+            )
+            config_dict['map_style'] = estilo
+            config_dict['block_ui']  = (estilo == "NONE")
 
-                ativos = sum([t_padrao, t_claro, t_escuro])
-                if ativos > 1:
-                    st.error("Conflito — selecione apenas um tileset.")
-                    config_dict['block_ui']  = True
-                    config_dict['map_style'] = "ERROR"
-                elif ativos == 0:
-                    config_dict['block_ui']  = True
-                    config_dict['map_style'] = "NONE"
-                else:
-                    config_dict['block_ui'] = False
-                    if t_padrao: config_dict['map_style'] = "PADRAO"
-                    elif t_claro: config_dict['map_style'] = "CLARO"
-                    else:         config_dict['map_style'] = "DARK"
+            st.markdown("**Camadas Vetoriais**")
+            config_dict['show_geojson']    = st.checkbox("Malha Territorial (Bairros)", value=False)
+            config_dict['show_points']     = st.checkbox("Amostras TWI (Pontos)", value=False)
+            config_dict['show_heatmap']    = st.checkbox("Mapa de Calor (Risco Elevado)", value=False)
+            config_dict['show_hidrografia']= st.checkbox("Hidrografia (Rede de Drenagem)", value=False)
+            config_dict['show_eventos']    = st.checkbox("Eventos Históricos de Inundação", value=False)
+            config_dict['use_cluster']     = st.checkbox("MarkerCluster (Agrupamento Espacial)", value=False)
 
-            # ── Submenu: Overlay de Camadas ───────────────
-            with st.expander("OVERLAY DE CAMADAS", expanded=False):
-                config_dict['show_geojson']     = st.toggle("Malha Municipal — PE",          value=False)
-                config_dict['show_points']      = st.toggle("Dataset TWI · Pontos",          value=False)
-                config_dict['show_heatmap']     = st.toggle("Kernel Density · Heatmap",      value=False)
-                config_dict['show_hidrografia'] = st.toggle("Rede Hidrográfica",             value=False)
-                config_dict['show_eventos']     = st.toggle("Registro de Eventos · SEPDEC",  value=False)
-
-            # ── Submenu: Performance ──────────────────────
-            with st.expander("PERFORMANCE", expanded=False):
-                config_dict['use_cluster'] = st.toggle(
-                    "MarkerCluster · Agrupamento",
-                    value=False,
-                    help="Agrupa vetores próximos. ⚠️ Desabilita inspeção individual."
-                )
-                if config_dict['use_cluster']:
-                    st.caption("› cluster ativo — inspeção vetorial desabilitada")
-
-    # ── 2. FILTRAGEM VETORIAL ────────────────────────────────
-    with c_filters:
-        with st.expander("// FILTRAGEM VETORIAL", expanded=False):
-            bairros_disponiveis = ["Todos"]
-            if not df.empty and 'NM_BAIRRO' in df.columns:
-                bairros_disponiveis += sorted(df['NM_BAIRRO'].dropna().unique().tolist())
-            elif not df.empty and 'LAYER' in df.columns:
-                bairros_disponiveis += sorted(df['LAYER'].dropna().unique().tolist())
-
+    # ── 2. FILTROS ESPACIAIS ─────────────────────────────────
+    with c_filter:
+        with st.expander("// FILTROS ESPACIAIS", expanded=False):
             status_disabled = config_dict.get('block_ui', False)
 
-            # ── Submenu: Recorte Espacial ─────────────────
-            with st.expander("RECORTE ESPACIAL", expanded=True):
-                config_dict['selected_bairro'] = st.selectbox(
-                    "Unidade de Análise",
-                    options=bairros_disponiveis,
-                    disabled=status_disabled
-                )
+            bairros_opcoes = ['Todos']
+            if 'NM_BAIRRO' in df_raw.columns:
+                bairros_opcoes += sorted(df_raw['NM_BAIRRO'].dropna().unique().tolist())
+            elif 'LAYER' in df_raw.columns:
+                bairros_opcoes += sorted(df_raw['LAYER'].dropna().unique().tolist())
 
-            # ── Submenu: Parâmetro TWI ────────────────────
-            with st.expander("PARÂMETRO TWI", expanded=True):
-                twi_min = float(df['twi'].min()) if not df.empty else 0.0
-                twi_max = float(df['twi'].max()) if not df.empty else 20.0
-                config_dict['twi_threshold'] = st.slider(
-                    "Limiar Mínimo",
-                    min_value=twi_min,
-                    max_value=twi_max,
-                    value=twi_min,
-                    disabled=status_disabled
-                )
+            config_dict['selected_bairro'] = st.selectbox(
+                "Unidade Espacial de Análise",
+                options=bairros_opcoes,
+                disabled=status_disabled
+            )
 
-            # ── Submenu: Janela Temporal (condicional) ────
+            twi_min = float(df_raw['twi'].min()) if not df_raw.empty else 0.0
+            twi_max = float(df_raw['twi'].max()) if not df_raw.empty else 20.0
+
+            config_dict['twi_threshold'] = st.slider(
+                "Limiar Mínimo",
+                min_value=twi_min,
+                max_value=twi_max,
+                value=twi_min,
+                disabled=status_disabled
+            )
+
             if config_dict.get('show_eventos'):
                 with st.expander("JANELA TEMPORAL · EVENTOS", expanded=True):
                     col_a, col_b = st.columns(2)
@@ -410,10 +304,9 @@ def render_top_navigation(df):
         with st.expander("// MÓDULOS ANALÍTICOS", expanded=False):
             cluster_on = config_dict.get('use_cluster', False)
 
-            # ── Submenu: Inspeção ─────────────────────────
             with st.expander("INSPEÇÃO VETORIAL", expanded=False):
                 config_dict['inspect_mode'] = st.toggle(
-                    "Inspeção · Ponto",
+                    "Inspeção de Ponto",
                     value=False,
                     disabled=status_disabled or cluster_on,
                     help="Desabilitado quando MarkerCluster está ativo."
@@ -424,7 +317,6 @@ def render_top_navigation(df):
                     disabled=status_disabled
                 )
 
-            # ── Submenu: Painéis ──────────────────────────
             with st.expander("PAINÉIS ANALÍTICOS", expanded=False):
                 config_dict['analytics_mode'] = st.checkbox(
                     "Dashboard Geoestatístico",
@@ -432,20 +324,43 @@ def render_top_navigation(df):
                     disabled=status_disabled
                 )
                 config_dict['ranking_mode'] = st.checkbox(
-                    "Ranking IRA · Por Bairro",
+                    "Ranking IRA — Por Unidade Espacial",
+                    value=False,
+                    disabled=status_disabled
+                )
+                config_dict['correlacao_mode'] = st.checkbox(
+                    "Correlação TWI × Defesa Civil",
                     value=False,
                     disabled=status_disabled
                 )
 
-            # ── Submenu: Output ───────────────────────────
+            # ── NOVO: Hub de Integração de Dados Externos ────
+            with st.expander("HUB DE DADOS EXTERNOS", expanded=False):
+                config_dict['api_hub_mode'] = st.checkbox(
+                    "Integração via API — Nowcasting e Diagnóstico Social",
+                    value=False,
+                    disabled=status_disabled,
+                    help=(
+                        "Ativa o módulo de consumo de APIs públicas: "
+                        "Open-Meteo (precipitação em tempo real), "
+                        "IBGE SIDRA (vulnerabilidade demográfica — Censo 2022), "
+                        "NASA POWER (em desenvolvimento)."
+                    )
+                )
+
             with st.expander("OUTPUT", expanded=False):
                 config_dict['export_csv'] = st.button(
-                    "⬇ Export · CSV Filtrado",
+                    "Export — CSV Filtrado",
                     disabled=status_disabled,
                     use_container_width=True
                 )
 
     return config_dict
+
+
+def render_sidebar():
+    """Sidebar reservada para uso futuro ou expansão de filtros."""
+    return {}
 
 
 def render_twi_legend(active_class=None):

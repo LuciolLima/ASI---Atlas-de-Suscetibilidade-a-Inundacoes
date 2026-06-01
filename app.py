@@ -1,7 +1,6 @@
 """
 SISTEMA ASI - APP PRINCIPAL
-Versão: 2.8 — Precipitação, Eventos Históricos, Ranking por Bairro,
-              MarkerCluster, Escala, Exportação CSV
+Versão: 3.0 — Hub de Integração de Dados Externos (API Hub)
 """
 
 import streamlit as st
@@ -13,6 +12,8 @@ import pandas as pd
 from src.sigweb import config, components, map_engine, report_generator, documentation
 from src.processing import data_loader
 from src.analysis import analytics
+from src.api import open_meteo
+from src.api import ibge_sidra
 
 st.set_page_config(
     page_title=config.PAGE_TITLE,
@@ -41,7 +42,7 @@ def main():
     df_raw          = data_loader.load_geospatial_dataset()
     df_precipitacao = data_loader.load_precipitacao()
     df_eventos_raw  = data_loader.load_eventos_inundacao()
-    df_defesa_civil = data_loader.load_defesa_civil()        # v2.8 — consolidado
+    df_defesa_civil = data_loader.load_defesa_civil()
 
     if df_raw.empty:
         st.warning("Base de dados geoespaciais indisponível.")
@@ -49,6 +50,7 @@ def main():
 
     # ── NAVEGAÇÃO / CONFIGURAÇÃO ──────────────────────────────
     conf = components.render_top_navigation(df_raw)
+    conf.update(components.render_sidebar())
 
     # ── PIPELINE DE FILTRAGEM ─────────────────────────────────
     limit_twi     = conf.get('twi_threshold', 0.0)
@@ -67,7 +69,7 @@ def main():
             f"(Unidade: {target_bairro} | TWI >= {limit_twi:.2f})"
         )
 
-    # ── FILTRO DE EVENTOS POR PERÍODO (v2.8) ─────────────────
+    # ── FILTRO DE EVENTOS POR PERÍODO ─────────────────────────
     df_eventos = df_eventos_raw.copy() if not df_eventos_raw.empty else pd.DataFrame()
     if not df_eventos.empty and conf.get('show_eventos') and 'data' in df_eventos.columns:
         ano_ini = conf.get('ano_inicio', 2000)
@@ -80,11 +82,11 @@ def main():
         st.info("Selecione um modelo de base cartográfica no menu superior para iniciar a renderização espacial.")
         return
 
-    # ── EXPORTAÇÃO CSV (v2.8) ─────────────────────────────────
+    # ── EXPORTAÇÃO CSV ────────────────────────────────────────
     if conf.get('export_csv'):
         csv_bytes = df_map.to_csv(index=False, sep=';', decimal=',').encode('utf-8')
         st.download_button(
-            label="💾 Clique para baixar o CSV filtrado",
+            label="Clique para baixar o CSV filtrado",
             data=csv_bytes,
             file_name=f"ASI_export_{target_bairro}_TWI{limit_twi:.1f}.csv",
             mime="text/csv"
@@ -107,8 +109,7 @@ def main():
     # ── SESSÃO 2: DIAGNÓSTICO DE PONTO E BUFFER ───────────────
     clicked          = output.get("last_object_clicked")
     active_twi_class = None
-
-    cluster_on = conf.get('use_cluster', False)
+    cluster_on       = conf.get('use_cluster', False)
 
     if conf.get('inspect_mode') and clicked and not cluster_on:
         st.markdown("---")
@@ -152,7 +153,7 @@ def main():
                     lambda r: geodesic(center_point, (r['latitude'], r['longitude'])).meters,
                     axis=1
                 )
-                df_radius = df_nearby[df_nearby['distancia'] <= 500]
+                df_radius      = df_nearby[df_nearby['distancia'] <= 500]
                 total_pontos   = len(df_radius)
                 criticos_altos = len(df_radius[df_radius['Classe_Risco_Cod'].isin(['CRITICO', 'ALTO'])])
                 seguros        = total_pontos - criticos_altos
@@ -180,8 +181,8 @@ def main():
                         df_pie, values='Quantidade', names='Status', hole=0.5,
                         color='Status',
                         color_discrete_map={
-                            'Risco (Crítico/Alto)':      '#FF4500',
-                            'Seguro (Moderado/Baixo)':   '#1E90FF'
+                            'Risco (Crítico/Alto)':    '#FF4500',
+                            'Seguro (Moderado/Baixo)': '#1E90FF'
                         }
                     )
                     fig.update_layout(
@@ -192,7 +193,6 @@ def main():
                     )
                     st.plotly_chart(fig, use_container_width=True)
 
-                # v2.8 — Eventos históricos próximos ao ponto clicado
                 if not df_eventos.empty and 'latitude' in df_eventos.columns:
                     ev_prox = df_eventos[
                         df_eventos['latitude'].between(lat - 0.005, lat + 0.005) &
@@ -200,49 +200,90 @@ def main():
                     ]
                     if not ev_prox.empty:
                         st.markdown("---")
-                        st.markdown(f"**📍 {len(ev_prox)} evento(s) histórico(s) registrado(s) nesta proximidade:**")
+                        st.markdown(f"**{len(ev_prox)} evento(s) histórico(s) registrado(s) nesta proximidade:**")
                         for _, ev in ev_prox.iterrows():
-                            sev = str(ev.get('severidade', 'N/A'))
-                            cor = config.COLORS_EVENTOS.get(sev, '#AAAAAA')
+                            sev     = str(ev.get('severidade', 'N/A'))
+                            cor     = config.COLORS_EVENTOS.get(sev, '#AAAAAA')
                             data_str = (
                                 ev['data'].strftime('%d/%m/%Y')
                                 if 'data' in ev and pd.notna(ev['data']) else '—'
                             )
                             st.markdown(
-                                f"<span style='color:{cor}; font-weight:bold;'>⚠ {sev}</span> "
+                                f"<span style='color:{cor}; font-weight:bold;'>{sev}</span> "
                                 f"— {data_str} | {ev.get('bairro','N/A')} "
                                 f"| {ev.get('descricao','—')}",
                                 unsafe_allow_html=True
                             )
-
         else:
             st.caption("Amostra vetorial não localizada nos parâmetros atuais.")
 
     # ── LEGENDA ───────────────────────────────────────────────
     components.render_twi_legend(active_class=active_twi_class)
 
-    # ── SESSÃO 3: ANALYTICS ───────────────────────────────────
+    # ── SESSÃO 3: ANALYTICS GEOESTATÍSTICO ───────────────────
     if conf.get('analytics_mode'):
         st.markdown("---")
         analytics.render_advanced_dashboard(df_map, conf, df_precipitacao=df_precipitacao)
 
-    # ── SESSÃO 3b: PRECIPITAÇÃO (v2.8) ────────────────────────
+    # ── SESSÃO 3b: PRECIPITAÇÃO HISTÓRICA (APAC) ──────────────
     if conf.get('analytics_mode') and not df_precipitacao.empty:
         st.markdown("---")
         analytics.render_precipitacao_dashboard(df_precipitacao, conf)
 
-    # ── SESSÃO 3c: DEFESA CIVIL (v2.8) ────────────────────────
+    # ── SESSÃO 3c: DEFESA CIVIL ────────────────────────────────
     if conf.get('analytics_mode') and not df_defesa_civil.empty:
         st.markdown("---")
         analytics.render_defesa_civil_dashboard(df_defesa_civil, conf)
 
-    # ── SESSÃO 3d: RANKING POR BAIRRO (v2.8) ─────────────────
+    # ── SESSÃO 3d: RANKING IRA POR BAIRRO ─────────────────────
     if conf.get('ranking_mode'):
         st.markdown("---")
         df_ranking = data_loader.calcular_indice_risco_bairro(df_map)
         analytics.render_ranking_bairros(df_ranking, conf)
 
-    # ── SESSÃO 4: DOCUMENTAÇÃO ────────────────────────────────
+    # ── SESSÃO 3e: CORRELAÇÃO TWI × DEFESA CIVIL ──────────────
+    if conf.get('correlacao_mode') and not df_defesa_civil.empty:
+        st.markdown("---")
+        df_correlacao = data_loader.correlacionar_datasets(
+            df_map,
+            df_defesa_civil,
+            df_precip=df_precipitacao
+        )
+        analytics.render_correlacao_dashboard(df_correlacao, conf)
+
+    # ══════════════════════════════════════════════════════════
+    # SESSÃO 4: HUB DE INTEGRAÇÃO DE DADOS EXTERNOS
+    # Módulo de consumo de APIs públicas para enriquecimento
+    # geoespacial e diagnóstico complementar do ASI.
+    # ══════════════════════════════════════════════════════════
+    if conf.get('api_hub_mode'):
+        st.markdown("---")
+        st.header("Hub de Integração de Dados Externos")
+        st.caption(
+            "Módulo de consumo de interfaces de programação de aplicação (APIs) públicas para "
+            "enriquecimento geoespacial, diagnóstico climático em tempo real e análise de "
+            "vulnerabilidade sociodemográfica integrada ao modelo TWI."
+        )
+
+        tab_meteo, tab_sidra, tab_nasa = st.tabs([
+            "Open-Meteo — Monitoramento Hidroclimático",
+            "IBGE SIDRA — Vulnerabilidade Demográfica",
+            "NASA POWER — Parâmetros Agrometeorológicos"
+        ])
+
+        # ── ABA 1: OPEN-METEO ─────────────────────────────────
+        with tab_meteo:
+            analytics.render_openmeteo_hub(conf, df_precipitacao)
+
+        # ── ABA 2: IBGE SIDRA ─────────────────────────────────
+        with tab_sidra:
+            analytics.render_ibge_hub(conf)
+
+        # ── ABA 3: NASA POWER ─────────────────────────────────
+        with tab_nasa:
+            analytics.render_nasa_hub(conf)
+            
+    # ── SESSÃO 6: DOCUMENTAÇÃO TÉCNICA ───────────────────────
     documentation.render_technical_docs()
 
 
