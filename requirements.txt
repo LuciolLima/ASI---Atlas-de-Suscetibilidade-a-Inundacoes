@@ -21,3 +21,10 @@ plotly>=5.22.0              # Gráficos interativos (pizza, histograma, scatter,
 
 # --- Integração com APIs Externas ---
 requests>=2.31.0            # Requisições HTTP (Open-Meteo API — precipitação tempo real)
+
+# --- Utilitários ---
+gdown>=4.7.1                # Download de arquivos do Google Drive (dados geoespaciais pré-processados do ASI)
+
+# --- Manipulação de Arquivos e Diretórios ---
+os>=0.1.0                   # Manipulação de arquivos e diretórios (organização dos dados geoespaciais pré-processados do ASI)
+zipfile>=0.1.0              # Manipulação de arquivos zip (descompactação dos dados geoespaciais pré-processados do ASI)
