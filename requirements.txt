@@ -23,7 +23,7 @@ plotly>=5.22.0              # Gráficos interativos (pizza, histograma, scatter,
 requests>=2.31.0            # Requisições HTTP (Open-Meteo API — precipitação tempo real)
 
 # --- Acesso a Dados Socioeconômicos ---
-sidrapy>=0.3.0               # Acesso à API do SIDRA/IBGE (dados socioeconômicos)
+sidrapy              # Acesso à API do SIDRA/IBGE (dados socioeconômicos)
 
 # --- Utilitários ---
 gdown>=4.7.1                # Download de arquivos do Google Drive (dados geoespaciais pré-processados do ASI)
