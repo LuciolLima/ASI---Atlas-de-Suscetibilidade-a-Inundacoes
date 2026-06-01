@@ -8,12 +8,36 @@ from streamlit_folium import st_folium
 from geopy.distance import geodesic
 import plotly.express as px
 import pandas as pd
+import os #manipulação de arquivos e diretórios, para organizar os dados geoespaciais pré-processados do ASI
+import zipfile #manipulação de arquivos zip, para descompactar os dados geoespaciais pré-processados do ASI
+import gdown #download do google drive, para baixar os dados geoespaciais pré-processados do ASI
 
 from src.sigweb import config, components, map_engine, report_generator, documentation
 from src.processing import data_loader
 from src.analysis import analytics
 from src.api import open_meteo
 from src.api import ibge_sidra
+
+@st.cache_resource
+def carregar_dados_do_drive():
+    pasta_data = "data"
+    
+    if not os.path.exists(pasta_data):
+        with st.spinner("Baixando dados geoespaciais pré-processados do ASI..."):
+            #ID do arquivo zip no Google Drive.
+            id_do_drive = "1A5WJe9KQrKfDiOiPfBoQ-MXyS7UQe9Qn"
+            url = f"https://drive.google.com/uc?id={id_do_drive}"
+            
+            arquivo_saida = "data_V3.0-System.zip"
+            gdown.download(url, arquivo_saida, quiet=False)
+            #Descompacta o arquivo zip baixado para a pasta atual, extraindo os dados geoespaciais pré-processados do ASI.
+            with zipfile.ZipFile(arquivo_saida, 'r') as zip_ref:
+                zip_ref.extractall(".")
+                
+            os.remove(arquivo_saida)
+            
+#Executa o download e extração dos dados geoespaciais pré-processados do ASI, garantindo que a aplicação tenha acesso aos dados necessários para renderização e análise. O uso de cache_resource otimiza o processo, evitando downloads repetidos durante a sessão do Streamlit.
+carregar_dados_do_drive()
 
 st.set_page_config(
     page_title=config.PAGE_TITLE,

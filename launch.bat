@@ -132,12 +132,12 @@ goto :PASSO2
 
 
 :: ══════════════════════════════════════════════════════════════
-::  PASSO 2 — DETECTA data_V2.8
+::  PASSO 2 — DETECTA data_V3.0
 :: ══════════════════════════════════════════════════════════════
 
 :PASSO2
-call :CABECALHO_PASSO 2 "Detectando pasta data_V2.8"
-call :AGUARDANDO "Procurando pasta data_V2.8..."
+call :CABECALHO_PASSO 2 "Detectando pasta data_V3.0"
+call :AGUARDANDO "Procurando pasta data_V3.0..."
 call :PAUSA_SEG 1
 echo.
 
@@ -148,8 +148,8 @@ if exist "%BASE_DIR%\data\" (
     goto :PASSO5
 )
 
-if not exist "%BASE_DIR%\data_V2.8\" (
-    call :ERRO "Pasta data_V2.8 NAO encontrada!"
+if not exist "%BASE_DIR%\data_V3.0\" (
+    call :ERRO "Pasta data_V3.0 NAO encontrada!"
     echo.
     call :AVISO "Esta pasta e ESSENCIAL para o sistema."
     call :AVISO "Coloque-a na raiz do projeto e tente novamente."
@@ -160,18 +160,18 @@ if not exist "%BASE_DIR%\data_V2.8\" (
     exit /b 1
 )
 
-call :OK "Pasta data_V2.8\ localizada."
-call :INFO "%BASE_DIR%\data_V2.8"
+call :OK "Pasta data_V3.0\ localizada."
+call :INFO "%BASE_DIR%\data_V3.0"
 call :PAUSA_SEG 1
 goto :PASSO3
 
 
 :: ══════════════════════════════════════════════════════════════
-::  PASSO 3 — VERIFICA ESTRUTURA INTERNA DO data_V2.8
+::  PASSO 3 — VERIFICA ESTRUTURA INTERNA DO data_V3.0
 :: ══════════════════════════════════════════════════════════════
 
 :PASSO3
-call :CABECALHO_PASSO 3 "Verificando integridade de data_V2.8"
+call :CABECALHO_PASSO 3 "Verificando integridade de data_V3.0"
 
 set "ERROS_V2=0"
 set "ROOT_V2=%BASE_DIR%\data_V2.8"
@@ -206,7 +206,7 @@ if !ERROS_V2! GTR 0 (
     pause
     exit /b 1
 )
-call :OK "Integridade de data_V2.8\ confirmada!"
+call :OK "Integridade de data_V3.0\ confirmada!"
 call :PAUSA_SEG 1
 goto :PASSO4
 
@@ -245,7 +245,7 @@ if exist "%BASE_DIR%\data\" (
 call :AGUARDANDO "Aplicando rename..."
 call :PAUSA_SEG 1
 
-rename "%BASE_DIR%\data_V2.8" "data" >nul 2>&1
+rename "%BASE_DIR%\data_V3.0" "data" >nul 2>&1
 
 if !errorlevel! NEQ 0 (
     call :ERRO "Falha ao renomear a pasta!"
@@ -324,8 +324,6 @@ call :CHK_ARQ_E   "%BASE_DIR%\src\analysis\analytics.py"
 call :CHK_PASTA_E "%BASE_DIR%\src\dashboard"
 call :CHK_PASTA_E "%BASE_DIR%\src\processing"
 call :CHK_ARQ_E   "%BASE_DIR%\src\processing\data_loader.py"
-call :CHK_PASTA_E "%BASE_DIR%\src\scripts"
-call :CHK_ARQ_E   "%BASE_DIR%\src\scripts\utilits.py"
 call :CHK_PASTA_E "%BASE_DIR%\src\sigweb"
 call :CHK_ARQ_E   "%BASE_DIR%\src\sigweb\components.py"
 call :CHK_ARQ_E   "%BASE_DIR%\src\sigweb\config.py"
