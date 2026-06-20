@@ -1,0 +1,63 @@
+# Netlify Configuration for ASI Landing Page
+# Deploy: conecte o repositório no Netlify e aponte para src/landing como diretório de publicação
+
+[build]
+  # Site estático — sem build command
+  command = "echo 'Static site — no build required'"
+  publish = "."
+
+[[headers]]
+  # Segurança e cache
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+    # CSP permissivo para fontes Google Fonts e inline styles do canvas
+    Content-Security-Policy = "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; script-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://asi-atlas.streamlit.app https://github.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+
+[[headers]]
+  # Cache agressivo para assets estáticos
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  # Cache moderado para HTML/CSS/JS
+  for = "*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[redirects]]
+  # SPA fallback (não necessário aqui, mas seguro)
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = false
+  conditions = {Role = ["admin"]}
+
+# Configurações de deploy
+[functions]
+  node_bundler = "esbuild"
+  included_files = []
+
+[dev]
+  command = "npx serve ."
+  port = 8888
+  targetPort = 3000
+  publish = "."
+
+# Variáveis de ambiente (configure no painel do Netlify)
+# STREAMLIT_URL = "https://asi-atlas.streamlit.app"
+# SITE_URL = "https://asi.netlify.app"

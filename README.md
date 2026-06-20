@@ -20,7 +20,7 @@
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.35%2B-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
 ![Folium](https://img.shields.io/badge/Folium-0.16%2B-77B829?style=for-the-badge&logo=leaflet&logoColor=white)
 ![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge)
-![Status](https://img.shields.io/badge/Status-Stable%20v2.8-success?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Stable%20v3.0-success?style=for-the-badge)
 ![Brazil](https://img.shields.io/badge/Made%20in-Brazil-009C3B?style=for-the-badge)
 
 <br/>
@@ -170,28 +170,28 @@ The relationship between these variables is inversely proportional to slope: **f
 - **Municipal boundary overlay** — all 185 PE municipalities (`pe_municipios_2024.json`) as transparent delimiters with hover tooltips
 - **TWI point sample layer** with risk-coded color markers; **MarkerCluster mode** for performance optimization
 - **Kernel Density Heatmap** for high-risk cluster visualization (Critical + High classes)
-- **Hydrographic network layer** — rivers and streams from APAC/ANA (`Hidrografia_Pernambuco.geojson`) ← *v2.8*
-- **Historical flood events layer** — SEPDEC occurrences by severity (LEVE / MODERADA / GRAVE) with popup and year range filter ← *v2.8*
+- **Hydrographic network layer** — rivers and streams from APAC/ANA (`Hidrografia_Pernambuco.geojson`) ← *v3.0*
+- **Historical flood events layer** — SEPDEC occurrences by severity (LEVE / MODERADA / GRAVE) with popup and year range filter ← *v3.0*
 - Native map scale bar and fullscreen control
 
 ###  Spatial Filters
 - **Spatial unit filtering** (Recorte Espacial) by neighborhood/administrative boundary
 - **TWI minimum threshold slider** (Limiar TWI Mínimo) for dynamic severity filtering
-- **Year range filter** for historical flood events (Janela Temporal) ← *v2.8*
+- **Year range filter** for historical flood events (Janela Temporal) ← *v3.0*
 - Active filter display with sample count feedback
 
 ###  Point-Level Diagnostics
-- Click-to-inspect vector sample; diagnostic card header **dynamically colored** by the TWI class of the selected point ← *v2.8*
+- Click-to-inspect vector sample; diagnostic card header **dynamically colored** by the TWI class of the selected point ← *v3.0*
 - Displays: TWI value, slope (°), altitude (m), land use (MapBiomas), IBGE urban classification, technical recommendation
 - Optional **geomorphometric notation** (academic mode)
-- **Nearby historical flood events** listed within buffer proximity ← *v2.8*
+- **Nearby historical flood events** listed within buffer proximity ← *v3.0*
 
 ###  Buffer Proximity Analysis (500m Radius)
 - Geodesic distance calculation (via GeoPy) for all neighboring points
 - Critical/High risk point count within radius; dynamic alert escalation
 - Donut chart of risk composition within buffer
 
-###  Statistical Dashboards ← *v2.8*
+###  Statistical Dashboards ← *v3.0*
 - **Análise Geoestatística** — proportional composition, TWI frequency distribution, spatial dispersion scatter, land use × susceptibility matrix
 - **Série Histórica de Precipitação (INMET/APAC)** — time series by meteorological station with max, mean, median
 - **Painel Defesa Civil PE 2024–2026** — human damages (deaths, displaced, homeless, injured) and material damages across 78 municipalities (SEPDEC/`defesacivil_pe_consolidado.csv`)
@@ -200,7 +200,7 @@ The relationship between these variables is inversely proportional to slope: **f
 ###  Data Export
 - Export the currently filtered TWI dataset as a semicolon-separated UTF-8 CSV (Export · CSV Filtrado)
 
-###  Professional GIS UI/UX ← *v2.8*
+###  Professional GIS UI/UX ← *v3.0*
 - Full CSS redesign: **IBM Plex Mono** (labels, values, tabs) + **IBM Plex Sans** (body)
 - Dark theme: `#080C10` background, steel blue `#2E86C1`, cyan `#00B4D8`
 - Nested submenus within each control panel (`// CARTOGRAFIA`, `// FILTRAGEM VETORIAL`, `// MÓDULOS ANALÍTICOS`)
@@ -290,14 +290,14 @@ cd ASI---Atlas-de-Suscetibilidade-a-Inundacoes
 
 **2. Download the geospatial dataset**
 
-The `data_V3.0-System` folder is not included in the repository due to file size constraints.
+The `data_V3.0` folder is not included in the repository due to file size constraints.
 Download it from the official Google Drive link:
 
 ```
 https://drive.google.com/file/d/1bmu7YR-gXdqL6Qstw1yMd0HpoqAZ_ik3/view?usp=sharing
 ```
 
-Move the extracted `data_V2.8` folder to the project root (same level as `app.py`).
+Move the extracted `data_V3.0` folder to the project root (same level as `app.py`).
 
 **3. Run the launcher**
 
@@ -307,7 +307,7 @@ Double-click: launch.bat
 
 The launcher will automatically:
 - Validate Python version (≥ 3.12 required)
-- Verify and rename `data_V2.8` → `data`
+- Verify and rename `data_V3.0` → `data`
 - Validate the full project structure
 - Install all dependencies from `requirements.txt`
 - Launch the SIGWeb at `http://localhost:8501`
@@ -355,7 +355,7 @@ ASI/
 │   README.md
 │   requirements.txt                    # Python dependencies
 │
-├───data/                               # Geospatial dataset (renamed from data_V2.8)
+├───data/                               # Geospatial dataset (renamed from data_V3.0)
 │   ├───curated/
 │   │   └───attribute_tables/           # Processed TWI attribute tables
 │   │           data_table.txt          # Main dataset (semicolon-separated, UTM coords)
@@ -366,7 +366,7 @@ ASI/
 │   │                   arc.dir
 │   │
 │   └───raw/
-│       ├───apac_exports/               # Precipitation data — v2.8
+│       ├───apac_exports/               # Precipitation data — v3.0
 │       │       precipitacao_nordeste.csv
 │       │       precipitacao_pernambuco.csv
 │       │
@@ -377,11 +377,11 @@ ASI/
 │       │       mdt_points_tables.txt
 │       │       pe_municipios_2024.json         # 185 PE municipalities (active layer)
 │       │
-│       ├───events/                     # Historical event data — v2.8
+│       ├───events/                     # Historical event data — v3.0
 │       │       defesacivil_pe_consolidado.csv  # SEPDEC 2024–2026 (78 municipalities)
 │       │       historico_inundacoes.csv        # Flood event registry
 │       │
-│       └───qgis_exports/              # Hydrographic network — v2.8
+│       └───qgis_exports/              # Hydrographic network — v3.0
 │               Hidrografia_Pernambuco.geojson
 │
 ├───docs/                               # Academic and methodological documentation
@@ -408,14 +408,14 @@ ASI/
 │       technical_docs.md
 │
 ├───System Version/
-│       ASI_CHANGELOG_v2.8.docx         # Full version changelog
+│       ASI_CHANGELOG_v3.0.docx         # Full version changelog
 │
 └───src/                                # Application source code
     ├───analysis/
     │       analytics.py                # Statistical dashboards (TWI, precipitation, Defesa Civil, IRA)
     ├───dashboard/
     ├───processing/
-    │       data_loader.py              # ETL pipeline + all v2.8 dataset loaders
+    │       data_loader.py              # ETL pipeline + all v3.0 dataset loaders
     ├───scripts/
     │       utilits.py                  # Shared utility functions
     └───sigweb/
@@ -516,7 +516,7 @@ Academic institution providing the educational and institutional framework withi
 ---
 
 *ASI — Atlas de Suscetibilidade a Inundações*
-*SIGWeb v2.8 · Stable Release*
+*SIGWeb v3.0 · Stable Release*
 
 *Developed in Brazil · Governed by Brazilian Law · Apache License 2.0*
 

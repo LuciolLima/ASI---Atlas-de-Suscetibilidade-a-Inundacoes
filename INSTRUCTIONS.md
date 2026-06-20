@@ -28,9 +28,9 @@
 
 ---
 
-## Passo 1 — Aquisição da Base de Dados Geoespaciais (`data_V2.7`)
+## Passo 1 — Aquisição da Base de Dados Geoespaciais (`data_V3.0`)
 
-O sistema ASI opera sobre uma base de dados geoespaciais estruturada, denominada `data_V2.7`,
+O sistema ASI opera sobre uma base de dados geoespaciais estruturada, denominada `data_V3.0`,
 que contém os vetores de atributos, exportações cartográficas e demais arquivos necessários
 para o processamento e a visualização dos índices de suscetibilidade.
 
@@ -40,7 +40,7 @@ abaixo:
 
 ---
 
-### 📥 Link oficial de download da pasta `data_V2.7`:
+### 📥 Link oficial de download da pasta `data_V3.0`:
 
 ```
 https://drive.google.com/drive/folders/1Q1vuKcCAeF25g3T3yhBaT8fNwMxejsc0?usp=drive_link
@@ -53,13 +53,13 @@ https://drive.google.com/drive/folders/1Q1vuKcCAeF25g3T3yhBaT8fNwMxejsc0?usp=dri
 1. **Copie o link acima na íntegra** e cole diretamente na barra de endereços do seu navegador
    de internet (Google Chrome, Firefox, Edge ou equivalente);
 2. Aguarde o carregamento da página do Google Drive;
-3. Clique com o botão direito sobre a pasta `data_V2.7` e selecione a opção **"Fazer download"**;
+3. Clique com o botão direito sobre a pasta `data_V3.0` e selecione a opção **\"Fazer download\"**;
 4. O Google Drive compactará automaticamente a pasta no formato `.zip`.
    Aguarde a conclusão do processo de compactação — **não interrompa o download**;
 5. Após a conclusão, localize o arquivo `.zip` na pasta de downloads do seu dispositivo;
 6. **Extraia o conteúdo** do arquivo `.zip` utilizando qualquer descompactador (Windows Explorer
    nativo, WinRAR, 7-Zip ou equivalente);
-7. Certifique-se de que, após a extração, existe uma pasta chamada exatamente **`data_V2.7`**
+7. Certifique-se de que, após a extração, existe uma pasta chamada exatamente **`data_V3.0`**
    (respeitando maiúsculas, minúsculas e o ponto na versão).
 
 > **Atenção:** Não renomeie a pasta. O sistema de lançamento (`launch_asi.bat`) realiza a
@@ -70,7 +70,7 @@ https://drive.google.com/drive/folders/1Q1vuKcCAeF25g3T3yhBaT8fNwMxejsc0?usp=dri
 
 ## Passo 2 — Posicionamento da Pasta no Projeto
 
-Após a extração, a pasta `data_V2.7` deve ser movida para o **diretório raiz do projeto**,
+Após a extração, a pasta `data_V3.0` deve ser movida para o **diretório raiz do projeto**,
 ou seja, para o mesmo local onde se encontram os demais arquivos e pastas principais do ASI.
 
 ### A estrutura raiz do projeto deve ser a seguinte:
@@ -86,7 +86,7 @@ ou seja, para o mesmo local onde se encontram os demais arquivos e pastas princi
 ├── 📄 ASI_Terms_of_Use_EN.docx
 ├── 📄 INSTRUCTIONS.md              ← este arquivo
 │
-├── 📁 data_V2.7/                   ← pasta que você acabou de mover
+├── 📁 data_V3.0/                   ← pasta que você acabou de mover
 │   ├── 📁 curated/
 │   └── 📁 raw/
 │
@@ -96,7 +96,7 @@ ou seja, para o mesmo local onde se encontram os demais arquivos e pastas princi
 └── 📁 src/
 ```
 
-> **Verificação:** Antes de prosseguir, confirme visualmente que a pasta `data_V2.7` está
+> **Verificação:** Antes de prosseguir, confirme visualmente que a pasta `data_V3.0` está
 > **no mesmo nível** que `app.py` e `launch_asi.bat` — e não dentro de nenhuma subpasta.
 > Posicionamentos incorretos resultarão em falha de detecção pelo sistema de lançamento.
 
@@ -104,7 +104,7 @@ ou seja, para o mesmo local onde se encontram os demais arquivos e pastas princi
 
 ## Passo 3 — Execução do Launcher (`launch_asi.bat`)
 
-Com a pasta `data_V2.7` corretamente posicionada, o sistema está pronto para ser inicializado.
+Com a pasta `data_V3.0` corretamente posicionada, o sistema está pronto para ser inicializado.
 Todo o processo restante — verificação de estrutura, instalação de dependências e lançamento
 da aplicação — é gerenciado automaticamente pelo arquivo de lançamento.
 
@@ -330,7 +330,7 @@ Use esta lista para verificar cada etapa antes de prosseguir:
 
 ---
 
-*ASI — Atlas de Suscetibilidade a Inundações | SIGWeb v2.7*
+*ASI — Atlas de Suscetibilidade a Inundações | SIGWeb v3.0*
 *Documento: INSTRUCTIONS.md v1.0*
 *Regido pelas leis da República Federativa do Brasil | Licença Apache 2.0 + Restrições Contratuais*
 *Para dúvidas ou contribuições: github.com/LuciolLima/ASI---Atlas-de-Suscetibilidade-a-Inundacoes*

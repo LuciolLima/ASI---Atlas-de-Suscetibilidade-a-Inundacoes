@@ -174,7 +174,7 @@ goto :PASSO3
 call :CABECALHO_PASSO 3 "Verificando integridade de data_V3.0"
 
 set "ERROS_V2=0"
-set "ROOT_V2=%BASE_DIR%\data_V2.8"
+set "ROOT_V2=%BASE_DIR%\\data_V3.0"
 
 call :CHK_PASTA_V2 "%ROOT_V2%\curated\attribute_tables"
 call :CHK_ARQ_V2   "%ROOT_V2%\curated\attribute_tables\data_table.txt"
@@ -201,12 +201,12 @@ echo.
 if !ERROS_V2! GTR 0 (
     call :ERRO "!ERROS_V2! item(s) ausente(s) — pasta incompleta!"
     echo.
-    call :AVISO "Corrija a estrutura de data_V2.8 e execute novamente."
+    call :AVISO "Corrija a estrutura de data_V3.0 e execute novamente."
     echo.
     pause
     exit /b 1
 )
-call :OK "Integridade de data_V3.0\ confirmada!"
+call :OK "Integridade de data_V3.0\\ confirmada!"
 call :PAUSA_SEG 1
 goto :PASSO4
 
@@ -230,11 +230,11 @@ goto :EOF
 
 
 :: ══════════════════════════════════════════════════════════════
-::  PASSO 4 — RENOMEIA data_V2.8 → data
+::  PASSO 4 — RENOMEIA data_V3.0 → data
 :: ══════════════════════════════════════════════════════════════
 
 :PASSO4
-call :CABECALHO_PASSO 4 "Renomeando data_V2.8 para data"
+call :CABECALHO_PASSO 4 "Renomeando data_V3.0 para data"
 
 if exist "%BASE_DIR%\data\" (
     call :AVISO "Pasta data\ ja existe — rename ignorado."
@@ -256,7 +256,7 @@ if !errorlevel! NEQ 0 (
 )
 
 echo.
-powershell -Command "Write-Host '  v  ' -ForegroundColor Green -NoNewline; Write-Host 'data_V2.8\  ->  ' -ForegroundColor Yellow -NoNewline; Write-Host 'data\' -ForegroundColor Green -NoNewline; Write-Host '  renomeada com sucesso!' -ForegroundColor DarkGray"
+powershell -Command "Write-Host '  v  ' -ForegroundColor Green -NoNewline; Write-Host 'data_V3.0\\  ->  ' -ForegroundColor Yellow -NoNewline; Write-Host 'data\\' -ForegroundColor Green -NoNewline; Write-Host '  renomeada com sucesso!' -ForegroundColor DarkGray"
 call :PAUSA_SEG 1
 goto :PASSO5
 
