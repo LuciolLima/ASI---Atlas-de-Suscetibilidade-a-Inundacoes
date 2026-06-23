@@ -33,7 +33,6 @@ def carregar_dados_do_drive():
         arquivo_saida = "data_V3.0-System.zip"
         
         try:
-            st.info(f"Baixando de GitHub Releases: {url[:70]}...")
             gdown.download(url, arquivo_saida, quiet=False)
             
             # Verifica se baixou algo válido
@@ -57,7 +56,6 @@ def carregar_dados_do_drive():
         try:
             with zipfile.ZipFile(arquivo_saida, 'r') as zip_ref:
                 zip_ref.extractall(".")
-            st.success("Dados geoespaciais carregados com sucesso!")
         except zipfile.BadZipFile:
             st.error("Arquivo ZIP corrompido ou inválido")
             st.stop()
