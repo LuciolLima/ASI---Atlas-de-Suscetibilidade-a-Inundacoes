@@ -34,7 +34,7 @@ def carregar_dados_do_drive():
         
         try:
             st.info(f"Baixando de GitHub Releases: {url[:70]}...")
-            gdown.download(url, arquivo_saida, quiet=False, fuzzy=True)
+            gdown.download(url, arquivo_saida, quiet=False)
             
             # Verifica se baixou algo válido
             if not (os.path.exists(arquivo_saida) and os.path.getsize(arquivo_saida) > 1000):
