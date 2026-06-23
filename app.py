@@ -20,23 +20,52 @@ from src.api import ibge_sidra
 
 @st.cache_resource
 def carregar_dados_do_drive():
+    """Baixa e extrai dados geoespaciais do GitHub Releases (confiável, sem auth)."""
     pasta_data = "data"
     
-    if not os.path.exists(pasta_data):
-        with st.spinner("Baixando dados geoespaciais pré-processados do ASI..."):
-            #ID do arquivo zip no Google Drive.
-            id_do_drive = "1A5WJe9KQrKfDiOiPfBoQ-MXyS7UQe9Qn"
-            url = f"https://drive.google.com/uc?id={id_do_drive}"
+    if os.path.exists(pasta_data):
+        return  # Já existe, usa cache
+    
+    with st.spinner("Baixando dados geoespaciais pré-processados do ASI..."):
+        # URL direta do GitHub Releases — CDN global, sem auth, sem limite
+        url = "https://github.com/LuciolLima/ASI---Atlas-de-Suscetibilidade-a-Inundacoes/releases/download/v3.1/data_V3.0-System.zip"
+        
+        arquivo_saida = "data_V3.0-System.zip"
+        
+        try:
+            st.info(f"Baixando de GitHub Releases: {url[:70]}...")
+            gdown.download(url, arquivo_saida, quiet=False, fuzzy=True)
             
-            arquivo_saida = "data_V3.0-System.zip"
-            gdown.download(url, arquivo_saida, quiet=False)
-            #Descompacta o arquivo zip baixado para a pasta atual, extraindo os dados geoespaciais pré-processados do ASI.
+            # Verifica se baixou algo válido
+            if not (os.path.exists(arquivo_saida) and os.path.getsize(arquivo_saida) > 1000):
+                raise Exception("Arquivo baixado vazio ou inválido")
+                
+        except Exception as e:
+            st.error(f"""
+            **Falha ao baixar dados do GitHub Releases**
+            
+            **Erro:** {e}
+            
+            **Verifique:**
+            1. O release `v3.1` existe e está publicado (não draft)
+            2. O asset `data_V3.0-System.zip` está anexado ao release
+            3. A URL está correta: {url}
+            """)
+            st.stop()
+        
+        # Descompacta
+        try:
             with zipfile.ZipFile(arquivo_saida, 'r') as zip_ref:
                 zip_ref.extractall(".")
-                
-            os.remove(arquivo_saida)
-            
-#Executa o download e extração dos dados geoespaciais pré-processados do ASI, garantindo que a aplicação tenha acesso aos dados necessários para renderização e análise. O uso de cache_resource otimiza o processo, evitando downloads repetidos durante a sessão do Streamlit.
+            st.success("Dados geoespaciais carregados com sucesso!")
+        except zipfile.BadZipFile:
+            st.error("Arquivo ZIP corrompido ou inválido")
+            st.stop()
+        finally:
+            if os.path.exists(arquivo_saida):
+                os.remove(arquivo_saida)
+
+# Executa o download e extração dos dados geoespaciais pré-processados do ASI
 carregar_dados_do_drive()
 
 st.set_page_config(
