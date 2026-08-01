@@ -1,57 +1,76 @@
-"""
-SISTEMA ASI - APP PRINCIPAL
-Versão: 3.0 — Hub de Integração de Dados Externos (API Hub)
+"""SISTEMA ASI - APP PRINCIPAL
+Versão: 3.1 — Core Geoespacial (TWI, Mapas, Analytics, Relatórios)
 """
 
-import streamlit as st
-from streamlit_folium import st_folium
-from geopy.distance import geodesic
-import plotly.express as px
+import os
+import zipfile
+
+import gdown
 import pandas as pd
-import os #manipulação de arquivos e diretórios, para organizar os dados geoespaciais pré-processados do ASI
-import zipfile #manipulação de arquivos zip, para descompactar os dados geoespaciais pré-processados do ASI
-import gdown #download do google drive, para baixar os dados geoespaciais pré-processados do ASI
+import plotly.express as px
+import streamlit as st
+import folium
+from geopy.distance import geodesic
+from streamlit_folium import st_folium
 
-from src.sigweb import config, components, map_engine, report_generator, documentation
-from src.processing import data_loader
+from scripts.verify_checksums import verificar_checksums
 from src.analysis import analytics
-from src.api import open_meteo
-from src.api import ibge_sidra
+from src.api import (
+    fetch_nasa_power_pe_cached,
+    fetch_precipitacao_pe_cached,
+    fetch_precipitacao_forecast_cached,
+    fetch_sidra_consolidado_cached,
+    fetch_multi_estacoes_pe_cached,
+)
+from src.api.charts import render_api_hub_dashboard
+from src.core.error_boundary import (
+    analytics_error_boundary,
+    map_error_boundary,
+    report_error_boundary,
+)
+from src.processing import data_loader
+from src.sigweb import components, config, documentation, map_engine, report_generator
+
 
 @st.cache_resource
 def carregar_dados_do_drive():
-    """Baixa e extrai dados geoespaciais do GitHub Releases (confiável, sem auth)."""
+    """Baixa e extrai dados geoespaciais do GitHub Releases (confiavel, sem auth)."""
     pasta_data = "data"
-    
+
     if os.path.exists(pasta_data):
-        return  # Já existe, usa cache
-    
-    with st.spinner("Baixando dados geoespaciais pré-processados do ASI..."):
+        # Verifica integridade dos dados existentes
+        if not verificar_checksums():
+            st.error("**Falha na verificacao de integridade dos dados**")
+            st.error("Os arquivos de dados foram modificados ou corrompidos. Reinicie a aplicacao para re-baixar.")
+            st.stop()
+        return  # Ja existe e valido, usa cache
+
+    with st.spinner("Baixando dados geoespaciais pre-processados do ASI..."):
         # URL direta do GitHub Releases — CDN global, sem auth, sem limite
         url = "https://github.com/LuciolLima/ASI---Atlas-de-Suscetibilidade-a-Inundacoes/releases/download/v3.1/data_V3.0-System.zip"
-        
+
         arquivo_saida = "data_V3.0-System.zip"
-        
+
         try:
             gdown.download(url, arquivo_saida, quiet=False)
-            
+
             # Verifica se baixou algo válido
             if not (os.path.exists(arquivo_saida) and os.path.getsize(arquivo_saida) > 1000):
                 raise Exception("Arquivo baixado vazio ou inválido")
-                
+
         except Exception as e:
             st.error(f"""
             **Falha ao baixar dados do GitHub Releases**
-            
+
             **Erro:** {e}
-            
+
             **Verifique:**
             1. O release `v3.1` existe e está publicado (não draft)
             2. O asset `data_V3.0-System.zip` está anexado ao release
             3. A URL está correta: {url}
             """)
             st.stop()
-        
+
         # Descompacta
         try:
             with zipfile.ZipFile(arquivo_saida, 'r') as zip_ref:
@@ -62,6 +81,7 @@ def carregar_dados_do_drive():
         finally:
             if os.path.exists(arquivo_saida):
                 os.remove(arquivo_saida)
+
 
 # Executa o download e extração dos dados geoespaciais pré-processados do ASI
 carregar_dados_do_drive()
@@ -81,6 +101,16 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
+# Health check endpoint para CI/monitoramento
+if st.query_params.get("_health", "") == "1":
+    st.json({
+        "status": "healthy",
+        "version": "3.1",
+        "data_loaded": os.path.exists("data")
+    })
+    st.stop()
+
+
 def main():
     st.title("ASI | Atlas de Suscetibilidade a Inundações")
     st.markdown(
@@ -90,9 +120,9 @@ def main():
     )
 
     # ── CARREGAMENTO DE DADOS ─────────────────────────────────
-    df_raw          = data_loader.load_geospatial_dataset()
+    df_raw = data_loader.load_geospatial_dataset()
     df_precipitacao = data_loader.load_precipitacao()
-    df_eventos_raw  = data_loader.load_eventos_inundacao()
+    df_eventos_raw = data_loader.load_eventos_inundacao()
     df_defesa_civil = data_loader.load_defesa_civil()
 
     if df_raw.empty:
@@ -104,8 +134,8 @@ def main():
     conf.update(components.render_sidebar())
 
     # ── PIPELINE DE FILTRAGEM ─────────────────────────────────
-    limit_twi     = conf.get('twi_threshold', 0.0)
-    df_map        = df_raw[df_raw['twi'] >= limit_twi].copy()
+    limit_twi = conf.get('twi_threshold', 0.0)
+    df_map = df_raw[df_raw['twi'] >= limit_twi].copy()
     target_bairro = conf.get('selected_bairro', 'Todos')
 
     if target_bairro != "Todos":
@@ -124,7 +154,7 @@ def main():
     df_eventos = df_eventos_raw.copy() if not df_eventos_raw.empty else pd.DataFrame()
     if not df_eventos.empty and conf.get('show_eventos') and 'data' in df_eventos.columns:
         ano_ini = conf.get('ano_inicio', 2000)
-        ano_fim = conf.get('ano_fim',    2030)
+        ano_fim = conf.get('ano_fim', 2030)
         df_eventos = df_eventos[
             df_eventos['data'].dt.year.between(ano_ini, ano_fim)
         ]
@@ -144,129 +174,146 @@ def main():
         )
 
     # ── SESSÃO 1: MAPA ────────────────────────────────────────
-    m = map_engine.render_map(
-        df_map,
-        conf,
-        df_eventos=df_eventos if conf.get('show_eventos') else None
-    )
+    @map_error_boundary("map")
+    def render_map_component():
+        m = map_engine.render_map(
+            df_map,
+            conf,
+            df_eventos=df_eventos if conf.get('show_eventos') else None
+        )
+        return st_folium(
+            m,
+            height=600,
+            use_container_width=True,
+            returned_objects=["last_object_clicked"]
+        )
 
-    output = st_folium(
-        m,
-        height=600,
-        use_container_width=True,
-        returned_objects=["last_object_clicked"]
-    )
+    output = render_map_component()
 
     # ── SESSÃO 2: DIAGNÓSTICO DE PONTO E BUFFER ───────────────
-    clicked          = output.get("last_object_clicked")
+    clicked = output.get("last_object_clicked")
     active_twi_class = None
-    cluster_on       = conf.get('use_cluster', False)
+    cluster_on = conf.get('use_cluster', False)
 
     if conf.get('inspect_mode') and clicked and not cluster_on:
         st.markdown("---")
-        lat, lon     = clicked['lat'], clicked['lng']
-        center_point = (lat, lon)
 
-        mask = (
-            (abs(df_map['latitude']  - lat) < 0.00001) &
-            (abs(df_map['longitude'] - lon) < 0.00001)
-        )
-        foco = df_map[mask]
+        @report_error_boundary("report")
+        def render_report_component():
+            lat, lon = clicked['lat'], clicked['lng']
+            center_point = (lat, lon)
 
-        if not foco.empty:
-            col_diag, col_buffer = st.columns([1.5, 1])
+            mask = (
+                (abs(df_map['latitude'] - lat) < 0.00001) &
+                (abs(df_map['longitude'] - lon) < 0.00001)
+            )
+            foco = df_map[mask]
 
-            with col_diag:
-                st.subheader("Diagnóstico Vetorial Selecionado")
-                st.markdown(
-                    report_generator.generate_technical_report(foco.iloc[0]),
-                    unsafe_allow_html=True
-                )
-                active_twi_class = str(foco.iloc[0]['Classe_Risco_Cod'])
+            if not foco.empty:
+                col_diag, col_buffer = st.columns([1.5, 1])
 
-                if conf.get('tech_mode'):
-                    st.info(
-                        f"**Nota Geomorfométrica:** A amostra apresenta TWI de "
-                        f"{foco.iloc[0]['twi']:.2f}, em área classificada como "
-                        f"{foco.iloc[0].get('Uso_Solo_Desc', 'não especificada')}. "
-                        "Indica tendência de convergência de fluxo superficial."
+                with col_diag:
+                    st.subheader("Diagnóstico Vetorial Selecionado")
+                    st.markdown(
+                        report_generator.generate_technical_report(foco.iloc[0]),
+                        unsafe_allow_html=True
+                    )
+                    active_twi_class = str(foco.iloc[0]['Classe_Risco_Cod'])
+
+                    if conf.get('tech_mode'):
+                        st.info(
+                            f"**Nota Geomorfométrica:** A amostra apresenta TWI de "
+                            f"{foco.iloc[0]['twi']:.2f}, em área classificada como "
+                            f"{foco.iloc[0].get('Uso_Solo_Desc', 'não especificada')}. "
+                            "Indica tendência de convergência de fluxo superficial."
+                        )
+
+                    # ── Gráfico de distribuição de risco no buffer 500m ────────
+                    df_nearby_diag = df_map[
+                        df_map['latitude'].between(lat - 0.005, lat + 0.005) &
+                        df_map['longitude'].between(lon - 0.005, lon + 0.005)
+                    ].copy()
+                    df_nearby_diag['distancia'] = df_nearby_diag.apply(
+                        lambda r: geodesic(center_point, (r['latitude'], r['longitude'])).meters,
+                        axis=1
+                    )
+                    df_nearby_diag = df_nearby_diag[df_nearby_diag['distancia'] <= 500]
+
+                    if not df_nearby_diag.empty:
+                        risk_counts = df_nearby_diag['Classe_Risco_Cod'].value_counts()
+                        risk_colors = {
+                            'CRITICO': '#8B0000',
+                            'ALTO': '#FF4500',
+                            'MODERADO': '#FFD700',
+                            'BAIXO': '#1E90FF',
+                            'MUITO_BAIXO': '#ADD8E6',
+                        }
+
+                        fig_pie = px.pie(
+                            values=risk_counts.values,
+                            names=risk_counts.index,
+                            title="Distribuição de Risco no Buffer (500m)",
+                            color=risk_counts.index,
+                            color_discrete_map=risk_colors,
+                            hole=0.4,
+                        )
+                        fig_pie.update_layout(
+                            height=250,
+                            margin=dict(t=40, b=10, l=10, r=10),
+                            showlegend=True,
+                            legend=dict(orientation="h", yanchor="bottom", y=-0.1, xanchor="center", x=0.5),
+                            paper_bgcolor='rgba(0,0,0,0)',
+                            plot_bgcolor='rgba(0,0,0,0)',
+                            font=dict(family="IBM Plex Sans", size=11, color="#C8D6E0"),
+                        )
+                        fig_pie.update_traces(textinfo='label+percent', textfont_size=10)
+                        st.plotly_chart(fig_pie, use_container_width=True)
+
+                with col_buffer:
+                    st.subheader("Análise de Adjacência (Raio 500m)")
+
+                    df_nearby = df_map[
+                        df_map['latitude'].between(lat - 0.005, lat + 0.005) &
+                        df_map['longitude'].between(lon - 0.005, lon + 0.005)
+                    ].copy()
+
+                    df_nearby['distancia'] = df_nearby.apply(
+                        lambda r: geodesic(center_point, (r['latitude'], r['longitude'])).meters,
+                        axis=1
                     )
 
-            with col_buffer:
-                st.subheader("Análise de Adjacência (Raio 500m)")
+                    df_nearby = df_nearby[df_nearby['distancia'] <= 500].sort_values('distancia')
 
-                df_nearby = df_map[
-                    df_map['latitude'].between(lat - 0.005, lat + 0.005) &
-                    df_map['longitude'].between(lon - 0.005, lon + 0.005)
-                ].copy()
-
-                df_nearby['distancia'] = df_nearby.apply(
-                    lambda r: geodesic(center_point, (r['latitude'], r['longitude'])).meters,
-                    axis=1
-                )
-                df_radius      = df_nearby[df_nearby['distancia'] <= 500]
-                total_pontos   = len(df_radius)
-                criticos_altos = len(df_radius[df_radius['Classe_Risco_Cod'].isin(['CRITICO', 'ALTO'])])
-                seguros        = total_pontos - criticos_altos
-
-                st.metric("Pontos no Raio (500m)", total_pontos)
-                st.metric(
-                    "Focos Críticos/Altos", criticos_altos,
-                    delta="Risco" if criticos_altos > 0 else "Estável",
-                    delta_color="inverse" if criticos_altos > 0 else "normal"
-                )
-
-                if criticos_altos == 0:
-                    st.success("Zona Estável: Nenhum ponto de risco elevado detectado no entorno.")
-                elif 1 <= criticos_altos <= 5:
-                    st.warning(f"Atenção: {criticos_altos} foco(s) de risco indicam possibilidade de saturação localizada.")
-                else:
-                    st.error(f"Alerta Máximo: {criticos_altos} pontos de alto risco sugerem perigo de transbordamento em cadeia.")
-
-                if total_pontos > 0:
-                    df_pie = pd.DataFrame({
-                        'Status':     ['Risco (Crítico/Alto)', 'Seguro (Moderado/Baixo)'],
-                        'Quantidade': [criticos_altos, seguros]
-                    })
-                    fig = px.pie(
-                        df_pie, values='Quantidade', names='Status', hole=0.5,
-                        color='Status',
-                        color_discrete_map={
-                            'Risco (Crítico/Alto)':    '#FF4500',
-                            'Seguro (Moderado/Baixo)': '#1E90FF'
+                    st.dataframe(
+                        df_nearby[['twi', 'Classe_Risco_Cod', 'NM_BAIRRO', 'distancia']].head(20),
+                        use_container_width=True,
+                        hide_index=True,
+                        column_config={
+                            "twi": st.column_config.NumberColumn("TWI", format="%.2f"),
+                            "distancia": st.column_config.NumberColumn("Distância (m)", format="%.0f"),
                         }
                     )
-                    fig.update_layout(
-                        margin=dict(t=10, b=10, l=10, r=10),
-                        height=200, showlegend=False,
-                        paper_bgcolor='rgba(0,0,0,0)',
-                        plot_bgcolor='rgba(0,0,0,0)'
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
 
-                if not df_eventos.empty and 'latitude' in df_eventos.columns:
-                    ev_prox = df_eventos[
-                        df_eventos['latitude'].between(lat - 0.005, lat + 0.005) &
-                        df_eventos['longitude'].between(lon - 0.005, lon + 0.005)
-                    ]
-                    if not ev_prox.empty:
-                        st.markdown("---")
-                        st.markdown(f"**{len(ev_prox)} evento(s) histórico(s) registrado(s) nesta proximidade:**")
-                        for _, ev in ev_prox.iterrows():
-                            sev     = str(ev.get('severidade', 'N/A'))
-                            cor     = config.COLORS_EVENTOS.get(sev, '#AAAAAA')
-                            data_str = (
-                                ev['data'].strftime('%d/%m/%Y')
-                                if 'data' in ev and pd.notna(ev['data']) else '—'
-                            )
-                            st.markdown(
-                                f"<span style='color:{cor}; font-weight:bold;'>{sev}</span> "
-                                f"— {data_str} | {ev.get('bairro','N/A')} "
-                                f"| {ev.get('descricao','—')}",
-                                unsafe_allow_html=True
-                            )
-        else:
-            st.caption("Amostra vetorial não localizada nos parâmetros atuais.")
+                    # Mapa de buffer
+                    m_buffer = folium.Map(location=center_point, zoom_start=16, tiles="OpenStreetMap")
+                    folium.Circle(
+                        location=center_point,
+                        radius=500,
+                        color="red",
+                        fill=True,
+                        fill_opacity=0.1,
+                        popup="Buffer 500m"
+                    ).add_to(m_buffer)
+                    folium.Marker(
+                        location=center_point,
+                        icon=folium.Icon(color="red", icon="exclamation-triangle", prefix="fa"),
+                        popup="Ponto Selecionado"
+                    ).add_to(m_buffer)
+                    st_folium(m_buffer, height=300, use_container_width=True)
+            else:
+                st.caption("Amostra vetorial não localizada nos parâmetros atuais.")
+
+        render_report_component()
 
     # ── LEGENDA ───────────────────────────────────────────────
     components.render_twi_legend(active_class=active_twi_class)
@@ -274,66 +321,64 @@ def main():
     # ── SESSÃO 3: ANALYTICS GEOESTATÍSTICO ───────────────────
     if conf.get('analytics_mode'):
         st.markdown("---")
-        analytics.render_advanced_dashboard(df_map, conf, df_precipitacao=df_precipitacao)
+
+        @analytics_error_boundary("composicao")
+        def render_analytics_component():
+            analytics.render_advanced_dashboard(df_map, conf, df_precipitacao=df_precipitacao)
+
+        render_analytics_component()
 
     # ── SESSÃO 3b: PRECIPITAÇÃO HISTÓRICA (APAC) ──────────────
     if conf.get('analytics_mode') and not df_precipitacao.empty:
         st.markdown("---")
-        analytics.render_precipitacao_dashboard(df_precipitacao, conf)
+
+        @analytics_error_boundary("precipitacao")
+        def render_precip_component():
+            analytics.render_precipitacao_dashboard(df_precipitacao, conf)
+
+        render_precip_component()
 
     # ── SESSÃO 3c: DEFESA CIVIL ────────────────────────────────
     if conf.get('analytics_mode') and not df_defesa_civil.empty:
         st.markdown("---")
-        analytics.render_defesa_civil_dashboard(df_defesa_civil, conf)
+
+        @analytics_error_boundary("defesa_civil")
+        def render_dc_component():
+            analytics.render_defesa_civil_dashboard(df_defesa_civil, conf)
+
+        render_dc_component()
 
     # ── SESSÃO 3d: RANKING IRA POR BAIRRO ─────────────────────
     if conf.get('ranking_mode'):
         st.markdown("---")
-        df_ranking = data_loader.calcular_indice_risco_bairro(df_map)
-        analytics.render_ranking_bairros(df_ranking, conf)
+
+        @analytics_error_boundary("ranking")
+        def render_ranking_component():
+            df_ranking = data_loader.calcular_indice_risco_bairro(df_map)
+            analytics.render_ranking_bairros(df_ranking, conf)
+
+        render_ranking_component()
 
     # ── SESSÃO 3e: CORRELAÇÃO TWI × DEFESA CIVIL ──────────────
     if conf.get('correlacao_mode') and not df_defesa_civil.empty:
         st.markdown("---")
-        df_correlacao = data_loader.correlacionar_datasets(
-            df_map,
-            df_defesa_civil,
-            df_precip=df_precipitacao
-        )
-        analytics.render_correlacao_dashboard(df_correlacao, conf)
 
-    # ══════════════════════════════════════════════════════════
-    # SESSÃO 4: HUB DE INTEGRAÇÃO DE DADOS EXTERNOS
-    # Módulo de consumo de APIs públicas para enriquecimento
-    # geoespacial e diagnóstico complementar do ASI.
-    # ══════════════════════════════════════════════════════════
+        @analytics_error_boundary("correlacao")
+        def render_correlacao_component():
+            df_correlacao = data_loader.correlacionar_datasets(
+                df_map,
+                df_defesa_civil,
+                df_precip=df_precipitacao
+            )
+            analytics.render_correlacao_dashboard(df_correlacao, conf)
+
+        render_correlacao_component()
+
+    # ── SESSÃO 3f: HUB DE DADOS EXTERNOS (APIs) ────────────────
     if conf.get('api_hub_mode'):
         st.markdown("---")
-        st.header("Hub de Integração de Dados Externos")
-        st.caption(
-            "Módulo de consumo de interfaces de programação de aplicação (APIs) públicas para "
-            "enriquecimento geoespacial, diagnóstico climático em tempo real e análise de "
-            "vulnerabilidade sociodemográfica integrada ao modelo TWI."
-        )
+        render_api_hub_dashboard()
 
-        tab_meteo, tab_sidra, tab_nasa = st.tabs([
-            "Open-Meteo — Monitoramento Hidroclimático",
-            "IBGE SIDRA — Vulnerabilidade Demográfica",
-            "NASA POWER — Parâmetros Agrometeorológicos"
-        ])
-
-        # ── ABA 1: OPEN-METEO ─────────────────────────────────
-        with tab_meteo:
-            analytics.render_openmeteo_hub(conf, df_precipitacao)
-
-        # ── ABA 2: IBGE SIDRA ─────────────────────────────────
-        with tab_sidra:
-            analytics.render_ibge_hub(conf)
-
-        # ── ABA 3: NASA POWER ─────────────────────────────────
-        with tab_nasa:
-            analytics.render_nasa_hub(conf)
-            
     # ── SESSÃO 6: DOCUMENTAÇÃO TÉCNICA ───────────────────────
     documentation.render_technical_docs()
 

@@ -1,14 +1,17 @@
-"""
-SISTEMA ASI - COMPONENTES DE UI
+"""SISTEMA ASI - COMPONENTES DE UI
 Versão: 3.0 — Hub de Integração de Dados Externos (API Hub)
 """
 
+from typing import Any
+
+import pandas as pd
 import streamlit as st
+
 from src.sigweb import config
 
-# ══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════
 #  INJEÇÃO GLOBAL DE CSS — GIS PROFESSIONAL THEME
-# ══════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════
 
 ASI_CSS = """
 <style>
@@ -27,6 +30,23 @@ ASI_CSS = """
     --asi-text:      #c8d6e0;
     --asi-text-dim:  #5a7a8a;
     --asi-text-hi:   #e8f4f8;
+    --asi-mono:      'IBM Plex Mono', monospace;
+    --asi-sans:      'IBM Plex Sans', sans-serif;
+}
+
+/* ── Light theme override ──────────────────────────────── */
+[data-theme="light"] {
+    --asi-bg:        #f8fafc;
+    --asi-surface:   #ffffff;
+    --asi-border:    #d1dbe6;
+    --asi-border-hi: #a8b8cc;
+    --asi-blue:      #2e86c1;
+    --asi-blue-hi:   #3fa8e0;
+    --asi-blue-dim:  #d6eaf8;
+    --asi-cyan:      #0090b0;
+    --asi-text:      #1a2a3a;
+    --asi-text-dim:  #5a7a8a;
+    --asi-text-hi:   #0d1a2a;
     --asi-mono:      'IBM Plex Mono', monospace;
     --asi-sans:      'IBM Plex Sans', sans-serif;
 }
@@ -226,14 +246,177 @@ div[data-testid="stMetric"] [data-testid="stMetricValue"] {
     font-weight: 500 !important;
     color: var(--asi-text-hi) !important;
 }
+
+/* ── Skeleton Loading ────────────────────────────────────── */
+.asi-skeleton {
+    background: linear-gradient(90deg, var(--asi-border) 25%, var(--asi-border-hi) 50%, var(--asi-border) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+    border-radius: 2px;
+}
+@keyframes skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+.asi-skeleton-map {
+    height: 400px;
+    width: 100%;
+    border: 1px solid var(--asi-border);
+    border-radius: 4px;
+}
+.asi-skeleton-chart {
+    height: 300px;
+    width: 100%;
+    border: 1px solid var(--asi-border);
+    border-radius: 4px;
+}
+.asi-skeleton-metric {
+    height: 60px;
+    width: 100%;
+    border-radius: 2px;
+}
+.asi-skeleton-title {
+    height: 16px;
+    width: 60%;
+    margin-bottom: 12px;
+}
+.asi-skeleton-table-row {
+    height: 12px;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+/* ── Toast Notifications ─────────────────────────────────── */
+.asi-toast-container {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.asi-toast {
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    font-family: var(--asi-sans);
+    font-size: 0.85rem;
+    animation: slide-in 0.3s ease-out;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+@keyframes slide-in {
+    from { opacity: 0; transform: translateX(100%); }
+    to { opacity: 1; transform: translateX(0); }
+}
+.asi-toast-success { background: #1e6b3a; color: #e8f8ef; border-left: 4px solid #2ecc71; }
+.asi-toast-warning { background: #8a6b1e; color: #fef8e8; border-left: 4px solid #f39c12; }
+.asi-toast-error { background: #8a1e1e; color: #fde8e8; border-left: 4px solid #e74c3c; }
+.asi-toast-info { background: #1e4a6b; color: #e8f4f8; border-left: 4px solid #2e86c1; }
+
 </style>
 """
 
+# ════════════════════════════════════════════════════════════════
+#  UX CORE HELPER FUNCTIONS
+# ═══════════════════════════════════════════════════════════════
 
-def render_top_navigation(df_raw):
+def inject_theme_toggle() -> None:
+    """Injeta o botão de toggle dark/light mode + JS para persistir no localStorage."""
+    js = """
+<script>
+(function() {
+    const STORAGE_KEY = 'asi_theme';
+    const root = document.documentElement;
+    const toggleBtn = document.createElement('div');
+    toggleBtn.className = 'asi-theme-toggle';
+    toggleBtn.innerHTML = '☀️ Light';
+    toggleBtn.title = 'Alternar tema claro/escuro';
+    document.body.appendChild(toggleBtn);
+
+    function applyTheme(theme) {
+        root.setAttribute('data-theme', theme);
+        toggleBtn.innerHTML = theme === 'light' ? '🌙 Dark' : '☀️ Light';
+    }
+
+    const saved = localStorage.getItem(STORAGE_KEY) || 'dark';
+    applyTheme(saved);
+
+    toggleBtn.addEventListener('click', () => {
+        const current = root.getAttribute('data-theme') || 'dark';
+        const next = current === 'dark' ? 'light' : 'dark';
+        localStorage.setItem(STORAGE_KEY, next);
+        applyTheme(next);
+    });
+})();
+</script>
+"""
+    st.markdown(js, unsafe_allow_html=True)
+
+
+def show_skeleton_map() -> None:
+    """Exibe skeleton loading para o mapa."""
+    st.markdown('<div class="asi-skeleton asi-skeleton-map"></div>', unsafe_allow_html=True)
+
+
+def show_skeleton_chart() -> None:
+    """Exibe skeleton loading para área de gráfico."""
+    st.markdown('<div class="asi-skeleton asi-skeleton-chart"></div>', unsafe_allow_html=True)
+
+
+def show_skeleton_metric() -> None:
+    """Exibe skeleton loading para uma métrica."""
+    st.markdown('<div class="asi-skeleton asi-skeleton-metric"></div>', unsafe_allow_html=True)
+
+
+def show_skeleton_table(rows: int = 5) -> None:
+    """Exibe skeletons loading para uma tabela."""
+    html = '<div class="asi-skeleton asi-skeleton-title"></div>'
+    for _ in range(rows):
+        html += '<div class="asi-skeleton asi-skeleton-table-row"></div>'
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def show_toast(message: str, toast_type: str = "info") -> None:
+    """Exibe uma toast notification usando CSS-only animation."""
+    icons = {
+        "success": "✅",
+        "warning": "⚠️",
+        "error": "❌",
+        "info": "ℹ️"
+    }
+    icon = icons.get(toast_type, "ℹ️")
+
+    html = f"""
+    <div class="asi-toast-container" id="asi-toast-container">
+        <div class="asi-toast asi-toast-{toast_type}">
+            {icon} {message}
+        </div>
+    </div>
+    <script>
+    setTimeout(function() {{
+        const container = document.getElementById('asi-toast-container');
+        if (container) {{
+            const toast = container.querySelector('.asi-toast');
+            if (toast) {{
+                toast.style.animation = 'slide-in 0.3s ease-out reverse';
+                setTimeout(() => container.remove(), 300);
+            }}
+        }}
+    }}, 4000);
+    </script>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+
+# ════════════════════════════════════════════════════════════════
+#  RENDER TOP NAVIGATION
+# ════════════════════════════════════════════════════════════════
+
+def render_top_navigation(df_raw: pd.DataFrame) -> dict[str, Any]:
     """Barra de navegação superior com controles de mapa e filtros."""
     st.markdown(ASI_CSS, unsafe_allow_html=True)
-    config_dict = {}
+    inject_theme_toggle()  # Injeta toggle de tema
+    config_dict: dict[str, Any] = {}
 
     c_mapa, c_filter, c_meta = st.columns([1.2, 1.5, 1.3])
 
@@ -258,112 +441,115 @@ def render_top_navigation(df_raw):
             config_dict['use_cluster']     = st.checkbox("MarkerCluster (Agrupamento Espacial)", value=False)
 
     # ── 2. FILTROS ESPACIAIS ─────────────────────────────────
-    with c_filter:
-        with st.expander("// FILTROS ESPACIAIS", expanded=False):
-            status_disabled = config_dict.get('block_ui', False)
+    with c_filter, st.expander("// FILTROS ESPACIAIS", expanded=False):
+        status_disabled = config_dict.get('block_ui', False)
 
-            bairros_opcoes = ['Todos']
-            if 'NM_BAIRRO' in df_raw.columns:
-                bairros_opcoes += sorted(df_raw['NM_BAIRRO'].dropna().unique().tolist())
-            elif 'LAYER' in df_raw.columns:
-                bairros_opcoes += sorted(df_raw['LAYER'].dropna().unique().tolist())
+        bairros_opcoes = ['Todos']
+        if 'NM_BAIRRO' in df_raw.columns:
+            bairros_opcoes += sorted(df_raw['NM_BAIRRO'].dropna().unique().tolist())
+        elif 'LAYER' in df_raw.columns:
+            bairros_opcoes += sorted(df_raw['LAYER'].dropna().unique().tolist())
 
-            config_dict['selected_bairro'] = st.selectbox(
-                "Unidade Espacial de Análise",
-                options=bairros_opcoes,
-                disabled=status_disabled
-            )
+        config_dict['selected_bairro'] = st.selectbox(
+            "Unidade Espacial de Análise",
+            options=bairros_opcoes,
+            disabled=status_disabled
+        )
 
-            twi_min = float(df_raw['twi'].min()) if not df_raw.empty else 0.0
-            twi_max = float(df_raw['twi'].max()) if not df_raw.empty else 20.0
+        twi_min = float(df_raw['twi'].min()) if not df_raw.empty else 0.0
+        twi_max = float(df_raw['twi'].max()) if not df_raw.empty else 20.0
 
-            config_dict['twi_threshold'] = st.slider(
-                "Limiar Mínimo",
-                min_value=twi_min,
-                max_value=twi_max,
-                value=twi_min,
-                disabled=status_disabled
-            )
+        config_dict['twi_threshold'] = st.slider(
+            "Limiar Mínimo",
+            min_value=twi_min,
+            max_value=twi_max,
+            value=twi_min,
+            disabled=status_disabled
+        )
 
-            if config_dict.get('show_eventos'):
-                with st.expander("JANELA TEMPORAL · EVENTOS", expanded=True):
-                    col_a, col_b = st.columns(2)
-                    with col_a:
-                        config_dict['ano_inicio'] = st.number_input(
-                            "Início", min_value=1980, max_value=2030,
-                            value=2000, step=1, disabled=status_disabled
-                        )
-                    with col_b:
-                        config_dict['ano_fim'] = st.number_input(
-                            "Término", min_value=1980, max_value=2030,
-                            value=2030, step=1, disabled=status_disabled
-                        )
+        if config_dict.get('show_eventos'):
+            with st.expander("JANELA TEMPORAL · EVENTOS", expanded=True):
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    config_dict['ano_inicio'] = st.number_input(
+                        "Início", min_value=1980, max_value=2030,
+                        value=2000, step=1, disabled=status_disabled
+                    )
+                with col_b:
+                    config_dict['ano_fim'] = st.number_input(
+                        "Término", min_value=1980, max_value=2030,
+                        value=2030, step=1, disabled=status_disabled
+                    )
 
     # ── 3. MÓDULOS ANALÍTICOS ────────────────────────────────
-    with c_meta:
-        with st.expander("// MÓDULOS ANALÍTICOS", expanded=False):
-            cluster_on = config_dict.get('use_cluster', False)
+    with c_meta, st.expander("// MÓDULOS ANALÍTICOS", expanded=False):
+        cluster_on = config_dict.get('use_cluster', False)
 
-            with st.expander("INSPEÇÃO VETORIAL", expanded=False):
-                config_dict['inspect_mode'] = st.toggle(
-                    "Inspeção de Ponto",
-                    value=False,
-                    disabled=status_disabled or cluster_on,
-                    help="Desabilitado quando MarkerCluster está ativo."
-                )
-                config_dict['tech_mode'] = st.toggle(
-                    "Notação Geomorfométrica",
-                    value=False,
-                    disabled=status_disabled
-                )
+        with st.expander("INSPEÇÃO VETORIAL", expanded=False):
+            config_dict['inspect_mode'] = st.toggle(
+                "Inspeção de Ponto",
+                value=False,
+                disabled=status_disabled or cluster_on,
+                help="Desabilitado quando MarkerCluster está ativo."
+            )
+            config_dict['tech_mode'] = st.toggle(
+                "Notação Geomorfométrica",
+                value=False,
+                disabled=status_disabled
+            )
 
-            with st.expander("PAINÉIS ANALÍTICOS", expanded=False):
-                config_dict['analytics_mode'] = st.checkbox(
-                    "Dashboard Geoestatístico",
-                    value=False,
-                    disabled=status_disabled
-                )
-                config_dict['ranking_mode'] = st.checkbox(
-                    "Ranking IRA — Por Unidade Espacial",
-                    value=False,
-                    disabled=status_disabled
-                )
-                config_dict['correlacao_mode'] = st.checkbox(
-                    "Correlação TWI × Defesa Civil",
-                    value=False,
-                    disabled=status_disabled
-                )
+        with st.expander("PAINÉIS ANALÍTICOS", expanded=False):
+            config_dict['analytics_mode'] = st.checkbox(
+                "Dashboard Geoestatístico",
+                value=False,
+                disabled=status_disabled
+            )
+            config_dict['ranking_mode'] = st.checkbox(
+                "Ranking IRA — Por Unidade Espacial",
+                value=False,
+                disabled=status_disabled
+            )
+            config_dict['correlacao_mode'] = st.checkbox(
+                "Correlação TWI × Defesa Civil",
+                value=False,
+                disabled=status_disabled
+            )
 
-            # ── NOVO: Hub de Integração de Dados Externos ────
-            with st.expander("HUB DE DADOS EXTERNOS", expanded=False):
-                config_dict['api_hub_mode'] = st.checkbox(
-                    "Integração via API — Nowcasting e Diagnóstico Social",
-                    value=False,
-                    disabled=status_disabled,
-                    help=(
-                        "Ativa o módulo de consumo de APIs públicas: "
-                        "Open-Meteo (precipitação em tempo real), "
-                        "IBGE SIDRA (vulnerabilidade demográfica — Censo 2022), "
-                        "NASA POWER (em desenvolvimento)."
-                    )
-                )
+        # ── NOVO: Hub de Integração de Dados Externos ────
+        with st.expander("HUB DE DADOS EXTERNOS", expanded=False):
+            st.warning(
+                "⚠️ **Atenção:** Ativar esta integração consumirá recursos de rede e CPU elevados. "
+                "As consultas a APIs públicas (Open-Meteo, IBGE SIDRA, NASA POWER) podem levar "
+                "10-30 segundos cada e dependem de conexão estável com a internet."
+            )
+            api_hub_active = st.checkbox(
+                "Ativar Hub de Dados Externos (Auto-carregar APIs)",
+                value=False,
+                disabled=status_disabled,
+                help=(
+                    "Consome APIs públicas automaticamente: "
+                    "Open-Meteo (nowcasting), IBGE SIDRA (demografia), NASA POWER (agrometeorologia)."
+                ),
+                key="api_hub_active"
+            )
+            config_dict['api_hub_mode'] = api_hub_active
 
-            with st.expander("OUTPUT", expanded=False):
-                config_dict['export_csv'] = st.button(
-                    "Export — CSV Filtrado",
-                    disabled=status_disabled,
-                    use_container_width=True
-                )
+        with st.expander("OUTPUT", expanded=False):
+            config_dict['export_csv'] = st.button(
+                "Export — CSV Filtrado",
+                disabled=status_disabled,
+                use_container_width=True
+            )
 
     return config_dict
 
 
-def render_sidebar():
+def render_sidebar() -> dict[str, Any]:
     """Sidebar reservada para uso futuro ou expansão de filtros."""
     return {}
 
 
-def render_twi_legend(active_class=None):
+def render_twi_legend(active_class: str | None = None) -> None:
     """Legenda de suscetibilidade TWI — estilo GIS profissional."""
     academic_texts = {
         'CRITICO':    "Zonas de convergência de fluxo extremo. Probabilidade quase certa de saturação e alagamento durante eventos pluviométricos. Intervenção infraestrutural obrigatória.",
@@ -509,7 +695,7 @@ def render_twi_legend(active_class=None):
   </div>
   <div class="asi-twi-panel{panel_extra}" style="border-left-color:{cor}40;">
     <span style="color:{cor};font-weight:500;font-size:0.72rem;letter-spacing:0.08em;">
-      &#9656; {nome_curto.upper()}
+      ▶ {nome_curto.upper()}
     </span><br>{texto_acad}
   </div>
 </div>

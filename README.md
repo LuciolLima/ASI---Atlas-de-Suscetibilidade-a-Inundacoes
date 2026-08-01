@@ -20,13 +20,18 @@
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.35%2B-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
 ![Folium](https://img.shields.io/badge/Folium-0.16%2B-77B829?style=for-the-badge&logo=leaflet&logoColor=white)
 ![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge)
-![Status](https://img.shields.io/badge/Status-Stable%20v3.0-success?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Stable%20v3.1-success?style=for-the-badge)
 ![Brazil](https://img.shields.io/badge/Made%20in-Brazil-009C3B?style=for-the-badge)
+
+![CI](https://github.com/LuciolLima/ASI---Atlas-de-Suscetibilidade-a-Inundacoes/actions/workflows/ci.yml/badge.svg)
+![Ruff](https://img.shields.io/badge/Ruff-Linting-FA5252?style=for-the-badge&logo=ruff&logoColor=white)
+![MyPy](https://img.shields.io/badge/MyPy-Type%20Checking-9A67E7?style=for-the-badge&logo=python&logoColor=white)
+![Tests](https://img.shields.io/badge/Tests-14%20Passed-brightgreen?style=for-the-badge&logo=pytest&logoColor=white)
+![Coverage](https://img.shields.io/badge/Coverage-%3E70%25-green?style=for-the-badge&logo=codecov&logoColor=white)
 
 <br/>
 
 > *"Translating terrain morphology into actionable flood risk intelligence."*
-
 <br/>
 
 </div>
@@ -114,52 +119,84 @@ The relationship between these variables is inversely proportional to slope: **f
 
 ##  System Architecture
 
+##  System Architecture
+
+```mermaid
+```mermaid
+flowchart TB
+    subgraph EXT["Fontes Externas"]
+        GH_REL["GitHub Releases\n(data_V3.0-System.zip)"]
+        APAC["APAC Pernambuco\n(Precipitação)"]
+        IBGE["IBGE SIDRA\n(Demografia)"]
+        NASA["NASA POWER\n(Agrometeorologia)"]
+        OM["Open-Meteo\n(Nowcasting)"]
+    end
+
+    subgraph PIPE["Pipeline de Dados (CI/CD)"]
+        VAL["scripts/validate_data.py\n+ Pandera Schema"]
+        CHK["scripts/verify_checksums.py\n+ SHA256"]
+        GH_ACTIONS["GitHub Actions\n.github/workflows/ci.yml"]
+    end
+
+    subgraph APP["ASI App (Streamlit + Folium)"]
+        LOAD["data_loader.py\n+ Cache Local + Fallback"]
+        UI["components.py\n(UX Core: Skeletons, Toasts,\nDark/Light, Tooltips)"]
+        MAP["map_engine.py\n(Folium + MarkerCluster,\nHeatMap, MiniMap)"]
+        ANAL["analytics.py\n(Geoestatística, Correlações,\nRanking IRA, Séries Temporais)"]
+        REPORT["report_generator.py\n(Diagnóstico Pontual,\nBuffer 500m)"]
+        HUB["api_hub.py\n(APIs Externas)"]
+    end
+
+    subgraph OUT["Saídas & Entregáveis"]
+        MAP_OUT["Mapa Interativo\n(Folium/Leaflet)"]
+        DASH["Dashboards Plotly\n+ Tabelas Filtráveis"]
+        CSV["Export CSV\n(Filtrado)"]
+        PDF["Relatórios PDF\n(Futuro Sprint 4)"]
+    end
+
+    GH_REL -->|Download + Checksum| LOAD
+    APAC -->|CSV| LOAD
+    IBGE -->|API| HUB
+    NASA -->|API| HUB
+    OM -->|API| HUB
+
+    LOAD -->|DataFrame Validado| UI
+    VAL -.->|Valida Schema| LOAD
+    CHK -.->|Verifica Integridade| LOAD
+    GH_ACTIONS -->|CI/CD| VAL
+    GH_ACTIONS -->|CI/CD| CHK
+
+    UI -->|Config + Filtros| MAP
+    UI -->|Config + Dados| ANAL
+    UI -->|Click Ponto| REPORT
+    UI -->|Toggle APIs| HUB
+
+    MAP --> MAP_OUT
+    ANAL --> DASH
+    REPORT --> DASH
+    UI --> CSV
+
+    classDef ext fill:#1a1a2e,stroke:#00b4d8,stroke-width:2px,color:#fff
+    classDef pipe fill:#16213e,stroke:#e94560,stroke-width:2px,color:#fff
+    classDef app fill:#0f0f23,stroke:#2e86c1,stroke-width:2px,color:#fff
+    classDef out fill:#0d1b2a,stroke:#1e90ff,stroke-width:2px,color:#fff
+
+    class GH_REL,APAC,IBGE,NASA,OM ext
+    class VAL,CHK,GH_ACTIONS pipe
+    class LOAD,UI,MAP,ANAL,REPORT,HUB app
+    class MAP_OUT,DASH,CSV,PDF out
 ```
-┌─────────────────────────────────────────────────────────┐
-│                     ASI SIGWeb                          │
-│              Geospatial Pipeline Architecture           │
-└─────────────────────────────────────────────────────────┘
-         │
-         ▼
-┌─────────────────┐     ┌──────────────────────────────┐
-│   DATA LAYER    │────▶│         ETL PIPELINE          │
-│                 │     │  src/processing/data_loader   │
-│  data/curated/  │     │                               │
-│  attribute_     │     │  1. CSV Ingestion (UTF-8)     │
-│  tables/        │     │  2. UTM→WGS84 Reprojection    │
-│  data_table.txt │     │     (PyProj / EPSG:31985→4326)│
-│                 │     │  3. MapBiomas Land Use Decode │
-│  data/raw/      │     │  4. IBGE Situacao Decode      │
-│  arcmap_exports/│     │  5. TWI Risk Classification   │
-│  *.json / *.txt │     │     (pd.cut with thresholds)  │
-└─────────────────┘     └──────────────┬───────────────┘
-                                       │
-                                       ▼
-                        ┌─────────────────────────────┐
-                        │       APPLICATION LAYER      │
-                        │         src/sigweb/          │
-                        │                             │
-                        │  config.py    → Constants    │
-                        │  components.py → UI Widgets  │
-                        │  map_engine.py → Folium Maps │
-                        │  report_gen.py → Diagnostics │
-                        │  analytics.py  → Statistics  │
-                        │  documentation.py → Docs     │
-                        └──────────────┬──────────────┘
-                                       │
-                                       ▼
-                        ┌─────────────────────────────┐
-                        │      PRESENTATION LAYER      │
-                        │          app.py              │
-                        │                             │
-                        │  Streamlit + Folium/Leaflet  │
-                        │  Plotly Charts               │
-                        │  Interactive Map (Canvas)    │
-                        │  Point Diagnostics           │
-                        │  Buffer Analysis (500m)      │
-                        │  Statistical Dashboard       │
-                        └─────────────────────────────┘
 ```
+
+---
+
+##  Architecture Diagram (Excalidraw)
+
+The interactive architecture diagram is available as [`architecture.excalidraw`](docs/architecture.excalidraw) — drag and drop onto [excalidraw.com](https://excalidraw.com) to view/edit.
+
+---
+
+`
 
 ---
 

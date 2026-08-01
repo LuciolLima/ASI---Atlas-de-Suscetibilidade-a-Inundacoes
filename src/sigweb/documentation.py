@@ -1,32 +1,34 @@
-"""
-SISTEMA ASI - DOCUMENTAÇÃO E RESPONSABILIDADE TÉCNICA
+"""SISTEMA ASI - DOCUMENTAÇÃO E RESPONSABILIDADE TÉCNICA
 Módulo responsável pela exibição do dossiê metodológico e fontes de dados espaciais.
 """
 
-import streamlit as st
 import os
 
-def load_academic_md():
+import streamlit as st
+
+
+def load_academic_md() -> str:
     """Lê o arquivo de documentação pesada."""
     # Caminho base para a sua pasta Docs
     path = "Docs/academic_context/DTM_doc.md"
     if os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             return f.read()
     return "O Arquivo `DTM_doc.md` não foi encontrado na pasta de documentação acadêmica. Por favor, atualize a página e se o problema persistir, entre em contato com o administrador do sistema."
 
-def render_technical_docs():
+
+def render_technical_docs() -> None:
     st.markdown("---")
     st.subheader("Documentação Técnica e Metodológica (DTM)")
-    
+
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "Fundamentação Algorítmica (TWI)", 
+        "Fundamentação Algorítmica (TWI)",
         "Pipeline de Geoprocessamento (ETL)",
-        "Ecossistema de Dados Oficiais", 
+        "Ecossistema de Dados Oficiais",
         "Termo de Responsabilidade",
         "Documentação Técnica Complementar (Markdown)"
     ])
-    
+
     # ABA 1: METODOLOGIA MATEMÁTICA E FÍSICA
     with tab1:
         st.markdown("**Índice Topográfico de Umidade (Topographic Wetness Index - TWI)**")
@@ -36,7 +38,7 @@ def render_technical_docs():
             "puramente estocásticas, o algoritmo fundamenta-se nas propriedades geomorfométricas do terreno "
             "para prever a propensão natural ao acúmulo de escoamento superficial."
         )
-        
+
         col1, col2 = st.columns(2)
         with col1:
             st.latex(r"TWI = \ln\left(\frac{a}{\tan \beta}\right)")
@@ -96,7 +98,7 @@ def render_technical_docs():
             "sondagens geotécnicas ou laudos técnicos emitidos por profissionais de engenharia e geociências "
             "para licenciamento civil ou elaboração de rotas de fuga definitivas."
         )
-        
+
     with tab5:
         academic_content = load_academic_md()
         st.markdown(academic_content)

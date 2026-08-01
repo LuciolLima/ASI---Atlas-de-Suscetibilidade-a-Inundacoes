@@ -1,17 +1,18 @@
-"""
-SISTEMA ASI - GERADOR DE RELATÓRIOS
+"""SISTEMA ASI - GERADOR DE RELATÓRIOS
 Gera diagnósticos textuais baseados em atributos do ponto.
 """
 
+import pandas as pd
+
 from src.sigweb import config
 
-def generate_technical_report(row):
+
+def generate_technical_report(row: pd.Series) -> str:
     """Gera HTML para o painel de detalhes."""
-    
     classe = str(row['Classe_Risco_Cod'])
     cor = config.COLORS.get(classe, '#333')
     label = row.get('Classe_Risco_Label', 'Não Classificado')
-    
+
     # Textos de recomendação
     if classe == 'CRITICO':
         rec = "Área de saturação extrema. Requer intervenção de drenagem e restrição construtiva imediata."

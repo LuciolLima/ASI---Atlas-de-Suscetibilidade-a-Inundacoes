@@ -1,28 +1,29 @@
-"""
-SISTEMA ASI - MOTOR DE RENDERIZAÇÃO
+"""SISTEMA ASI - MOTOR DE RENDERIZAÇÃO
 Versão: 2.8 — MarkerCluster, Escala, Hidrografia, Eventos Históricos, Tooltips
 """
 
-import folium
-import streamlit as st
 import json
 import os
-import pandas as pd
-from folium.plugins import Fullscreen, HeatMap, MarkerCluster
-from src.sigweb import config
+from typing import Any
 
+import folium
+import pandas as pd
+import streamlit as st
+from folium.plugins import Fullscreen, HeatMap, MarkerCluster
+
+from src.sigweb import config
 
 # ══════════════════════════════════════════════════════════════
 #  CACHE DE ARQUIVOS ESTÁTICOS
 # ══════════════════════════════════════════════════════════════
 
 @st.cache_data(ttl=3600)
-def _load_geojson_cache():
+def _load_geojson_cache() -> dict[str, Any] | None:
     path = config.PATH_GEOJSON
     if os.path.exists(path):
         try:
-            with open(path, 'r', encoding='utf-8') as f:
-                return json.load(f)
+            with open(path, encoding='utf-8') as f:
+                return json.load(f)  # type: ignore[no-any-return]
         except Exception as e:
             st.warning(f"GeoJSON: erro ao ler — {e}")
             return None
@@ -31,25 +32,28 @@ def _load_geojson_cache():
 
 
 @st.cache_data(ttl=3600)
-def _load_hidrografia_cache():
+def _load_hidrografia_cache() -> dict[str, Any] | None:
     path = config.PATH_HIDROGRAFIA
     if os.path.exists(path):
         try:
-            with open(path, 'r', encoding='utf-8') as f:
-                return json.load(f)
+            with open(path, encoding='utf-8') as f:
+                return json.load(f)  # type: ignore[no-any-return]
         except Exception as e:
             st.warning(f"Hidrografia: erro ao ler — {e}")
             return None
     return None
 
 
-# ══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════
 #  RENDER PRINCIPAL
-# ══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════
 
-def render_map(df, conf, df_eventos=None):
-    """
-    Gera o objeto Folium com todas as camadas configuradas.
+def render_map(
+    df: pd.DataFrame,
+    conf: dict[str, Any],
+    df_eventos: pd.DataFrame | None = None
+) -> folium.Map:
+    """Gera o objeto Folium com todas as camadas configuradas.
 
     Parâmetros
     ----------
@@ -57,7 +61,6 @@ def render_map(df, conf, df_eventos=None):
     conf        : dict de configuração vindo dos components
     df_eventos  : DataFrame de eventos históricos (opcional, v2.8)
     """
-
     # ── 1. Centro e Zoom ─────────────────────────────────────
     if not df.empty:
         center = [df['latitude'].mean(), df['longitude'].mean()]
@@ -83,7 +86,7 @@ def render_map(df, conf, df_eventos=None):
         prefer_canvas=True
     )
 
-    Fullscreen(position="topright").add_to(m)
+    Fullscreen(position="topright").add_to(m)  # type: ignore[no-untyped-call]
 
     # ── 3. Malha GeoJSON (Bairros) ───────────────────────────
     if conf.get('show_geojson'):
@@ -93,18 +96,18 @@ def render_map(df, conf, df_eventos=None):
             tooltip_field = 'NM_BAIRRO' if 'NM_BAIRRO' in feat else list(feat.keys())[0]
 
             folium.GeoJson(
-                geo_data,
-                name="Malha Territorial (Bairros)",
-                style_function=lambda x: {
-                    'color':       '#ffffff' if estilo == 'DARK' else '#333333',
-                    'weight':      1,
-                    'fillOpacity': 0.05
-                },
-                tooltip=folium.GeoJsonTooltip(
-                    fields=[tooltip_field],
-                    aliases=['Bairro:']
-                )
-            ).add_to(m)
+                            geo_data,
+                            name="Malha Territorial (Bairros)",
+                            style_function=lambda _: {
+                                'color':       '#ffffff' if estilo == 'DARK' else '#333333',
+                                'weight':      1,
+                                'fillOpacity': 0.05
+                            },
+                            tooltip=folium.GeoJsonTooltip(
+                                fields=[tooltip_field],
+                                aliases=['Bairro:']
+                            )
+                        ).add_to(m)
 
     # ── 4. Hidrografia (v2.8) ────────────────────────────────
     if conf.get('show_hidrografia'):
@@ -114,18 +117,18 @@ def render_map(df, conf, df_eventos=None):
             tem_nome = 'nome' in props
 
             folium.GeoJson(
-                hidro_data,
-                name="Hidrografia (Rios e Córregos)",
-                style_function=lambda x: {
-                    'color':   config.COLOR_HIDROGRAFIA,
-                    'weight':  2,
-                    'opacity': 0.85
-                },
-                tooltip=folium.GeoJsonTooltip(
-                    fields=['nome'] if tem_nome else [],
-                    aliases=["Curso d'água:"] if tem_nome else []
-                )
-            ).add_to(m)
+                            hidro_data,
+                            name="Hidrografia (Rios e Córregos)",
+                            style_function=lambda _: {
+                                'color':   config.COLOR_HIDROGRAFIA,
+                                'weight':  2,
+                                'opacity': 0.85
+                            },
+                            tooltip=folium.GeoJsonTooltip(
+                                fields=['nome'] if tem_nome else [],
+                                aliases=["Curso d'água:"] if tem_nome else []
+                            )
+                        ).add_to(m)
         else:
             st.caption("ℹ️ Hidrografia: arquivo `hidrografia_cabo.json` não encontrado em `data/raw/arcmap_exports/`.")
 
@@ -136,14 +139,14 @@ def render_map(df, conf, df_eventos=None):
             [row['latitude'], row['longitude'], 1]
             for _, row in df_heat.iterrows()
         ]
-        HeatMap(
-            heat_data,
-            name="Mancha de Calor (Risco Elevado)",
-            radius=15,
-            blur=10,
-            min_opacity=0.4,
-            gradient={0.4: 'blue', 0.65: 'lime', 1: 'red'}
-        ).add_to(m)
+        HeatMap(  # type: ignore[no-untyped-call]
+                    heat_data,
+                    name="Mancha de Calor (Risco Elevado)",
+                    radius=15,
+                    blur=10,
+                    min_opacity=0.4,
+                    gradient={0.4: 'blue', 0.65: 'lime', 1: 'red'}
+                ).add_to(m)
 
     # ── 6. Pontos TWI ────────────────────────────────────────
     if conf.get('show_points') and not df.empty:
@@ -164,13 +167,13 @@ def render_map(df, conf, df_eventos=None):
 
         if usar_cluster:
             # ── MarkerCluster (v2.8) ─────────────────────────
-            cluster = MarkerCluster(
-                name="Amostras TWI (Agrupado)",
-                options={
-                    'maxClusterRadius':       40,
-                    'disableClusteringAtZoom': 16
-                }
-            )
+            cluster = MarkerCluster(  # type: ignore[no-untyped-call]
+                            name="Amostras TWI (Agrupado)",
+                            options={
+                                'maxClusterRadius':       40,
+                                'disableClusteringAtZoom': 16
+                            }
+                        )
             for _, row in subset.iterrows():
                 classe = str(row['Classe_Risco_Cod'])
                 cor    = config.COLORS.get(classe, '#808080')

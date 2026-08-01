@@ -1,5 +1,4 @@
-"""
-SISTEMA ASI - MÓDULO DE CONFIGURAÇÃO GLOBAL
+"""SISTEMA ASI - MÓDULO DE CONFIGURAÇÃO GLOBAL
 Versão: 2.8 — Precipitação, Hidrografia, Eventos Históricos, Exportação
 """
 

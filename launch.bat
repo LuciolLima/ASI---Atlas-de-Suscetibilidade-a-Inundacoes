@@ -2,10 +2,11 @@
 setlocal EnableDelayedExpansion
 chcp 65001 >nul 2>&1
 
-:: ══════════════════════════════════════════════════════════════
-::  ASI | Atlas de Suscetibilidade a Inundações
-::  Launcher Unificado — Windows
-:: ══════════════════════════════════════════════════════════════
+:: ══════════════════════════════════════════════════════════════════════════════
+::  ASI | Atlas de Suscetibilidade a Inundacoes
+::  Launcher Unificado v3.2 — Windows
+::  Enterprise-Grade SIGWeb with Full Observability Stack
+:: ══════════════════════════════════════════════════════════════════════════════
 
 set "BASE_DIR=%~dp0"
 set "BASE_DIR=%BASE_DIR:~0,-1%"
@@ -15,10 +16,9 @@ set "PYTHON_BIN="
 cls
 goto :TELA_INICIAL
 
-
-:: ══════════════════════════════════════════════════════════════
-::  HELPERS DE COR (via PowerShell — sem vazamento ANSI)
-:: ══════════════════════════════════════════════════════════════
+:: ══════════════════════════════════════════════════════════════════════════════
+::  HELPERS DE COR (via PowerShell)
+:: ══════════════════════════════════════════════════════════════════════════════
 
 :OK
 powershell -Command "Write-Host '  v  ' -ForegroundColor Green -NoNewline; Write-Host '%~1'"
@@ -37,21 +37,25 @@ powershell -Command "Write-Host '  .  ' -ForegroundColor Cyan -NoNewline; Write-
 goto :EOF
 
 :LINHA
-powershell -Command "Write-Host ('=' * 62) -ForegroundColor DarkGray"
+powershell -Command "Write-Host ('=' * 70) -ForegroundColor DarkGray"
 goto :EOF
 
 :LINHA_FINA
-powershell -Command "Write-Host ('-' * 62) -ForegroundColor DarkGray"
+powershell -Command "Write-Host ('-' * 70) -ForegroundColor DarkGray"
 goto :EOF
 
 :PAUSA_SEG
-timeout /t %~1 /nobreak >nul
+if "%~1"=="" (
+    powershell -Command "Start-Sleep -Seconds 1"
+) else (
+    powershell -Command "Start-Sleep -Seconds %~1"
+)
 goto :EOF
 
 :CABECALHO_PASSO
 echo.
 call :LINHA
-powershell -Command "Write-Host '  PASSO %~1/8  ' -ForegroundColor Cyan -NoNewline; Write-Host '|  ' -ForegroundColor DarkGray -NoNewline; Write-Host '%~2' -ForegroundColor Magenta"
+powershell -Command "Write-Host '  PASSO %~1/9  ' -ForegroundColor Cyan -NoNewline; Write-Host '|  ' -ForegroundColor DarkGray -NoNewline; Write-Host '%~2' -ForegroundColor Magenta"
 call :LINHA
 echo.
 goto :EOF
@@ -60,18 +64,18 @@ goto :EOF
 powershell -Command "Write-Host '  ...  ' -ForegroundColor Blue -NoNewline; Write-Host '%~1' -ForegroundColor DarkGray"
 goto :EOF
 
-
-:: ══════════════════════════════════════════════════════════════
+:: ═══════════════════════════════════════════════════════════════════════════════
 ::  TELA INICIAL
-:: ══════════════════════════════════════════════════════════════
+:: ══════════════════════════════════════════════════════════════════════════════
 
 :TELA_INICIAL
 cls
 echo.
-powershell -Command "Write-Host '  +========================================================+' -ForegroundColor Cyan"
+powershell -Command "Write-Host '  +=====================================================================+' -ForegroundColor Cyan"
 powershell -Command "Write-Host '  |  ' -ForegroundColor Cyan -NoNewline; Write-Host 'ASI ^| Atlas de Suscetibilidade a Inundacoes    ' -ForegroundColor White -NoNewline; Write-Host '  |' -ForegroundColor Cyan"
-powershell -Command "Write-Host '  |  ' -ForegroundColor Cyan -NoNewline; Write-Host 'Launcher Unificado v2.0  --  Windows           ' -ForegroundColor DarkGray -NoNewline; Write-Host '  |' -ForegroundColor Cyan"
-powershell -Command "Write-Host '  +========================================================+' -ForegroundColor Cyan"
+powershell -Command "Write-Host '  |  ' -ForegroundColor Cyan -NoNewline; Write-Host 'Launcher Unificado v3.2  --  Windows           ' -ForegroundColor DarkGray -NoNewline; Write-Host '  |' -ForegroundColor Cyan"
+powershell -Command "Write-Host '  |  ' -ForegroundColor Cyan -NoNewline; Write-Host 'DuckDB + Polars + GeoParquet + OpenTelemetry      ' -ForegroundColor DarkGray -NoNewline; Write-Host '  |' -ForegroundColor Cyan"
+powershell -Command "Write-Host '  +=====================================================================+' -ForegroundColor Cyan"
 echo.
 powershell -Command "Write-Host '  Raiz do projeto: ' -NoNewline -ForegroundColor DarkGray; Write-Host '%BASE_DIR%' -ForegroundColor Cyan"
 echo.
@@ -85,12 +89,12 @@ call :PAUSA_SEG 2
 goto :PASSO1
 
 
-:: ══════════════════════════════════════════════════════════════
-::  PASSO 1 — VERSÃO DO PYTHON
-:: ══════════════════════════════════════════════════════════════
+:: ══════════════════════════════════════════════════════════════════════════════
+::  PASSO 1 — VERSÃO DO PYTHON (3.12+)
+:: ══════════════════════════════════════════════════════════════════════════════
 
 :PASSO1
-call :CABECALHO_PASSO 1 "Verificando versao do Python"
+call :CABECALHO_PASSO 1 "Verificando versao do Python (3.12+)"
 call :AGUARDANDO "Detectando interpretador Python..."
 call :PAUSA_SEG 1
 echo.
@@ -120,7 +124,7 @@ if "!PYTHON_BIN!"=="" (
     exit /b 1
 )
 
-for /f "tokens=*" %%V in ('!PYTHON_BIN! -c "import sys; print(f\"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\")" 2^>nul') do set "PYTHON_VER=%%V"
+for /f "tokens=*" %%V in ('!PYTHON_BIN! -c "import sys; print(f\\\"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\\\")" 2^>nul') do set "PYTHON_VER=%%V"
 
 call :INFO "Executavel : !PYTHON_BIN!"
 call :INFO "Detectado  : Python !PYTHON_VER!"
@@ -131,142 +135,38 @@ call :PAUSA_SEG 1
 goto :PASSO2
 
 
-:: ══════════════════════════════════════════════════════════════
-::  PASSO 2 — DETECTA data_V3.0
-:: ══════════════════════════════════════════════════════════════
+:: ══════════════════════════════════════════════════════════════════════════════
+::  PASSO 2 — VERIFICA DADOS GEOESPACIAIS (GeoParquet)
+:: ══════════════════════════════════════════════════════════════════════════════
 
 :PASSO2
-call :CABECALHO_PASSO 2 "Detectando pasta data_V3.0"
-call :AGUARDANDO "Procurando pasta data_V3.0..."
+call :CABECALHO_PASSO 2 "Verificando dados geoespaciais (GeoParquet)"
+call :AGUARDANDO "Procurando pasta data/curated..."
 call :PAUSA_SEG 1
 echo.
 
-if exist "%BASE_DIR%\data\" (
-    call :OK "Pasta data\ ja existe — rename anterior detectado."
-    call :INFO "Pulando passos 3 e 4."
+if exist "%BASE_DIR%\data\curated\twi_points.parquet" (
+    call :OK "Dados GeoParquet ja existentes — download nao necessario."
+    call :INFO "Delete .asi_launcher_state para forcar re-download."
     call :PAUSA_SEG 1
-    goto :PASSO5
+    goto :PASSO3
 )
 
-if not exist "%BASE_DIR%\data_V3.0\" (
-    call :ERRO "Pasta data_V3.0 NAO encontrada!"
-    echo.
-    call :AVISO "Esta pasta e ESSENCIAL para o sistema."
-    call :AVISO "Coloque-a na raiz do projeto e tente novamente."
-    echo.
-    call :LINHA
-    echo.
-    pause
-    exit /b 1
-)
-
-call :OK "Pasta data_V3.0\ localizada."
-call :INFO "%BASE_DIR%\data_V3.0"
+call :AVISO "Dados GeoParquet nao encontrados. Serao baixados do GitHub Releases na execucao."
+call :INFO "Fonte: https://github.com/LuciolLima/ASI/releases/tag/v3.1"
+call :INFO "Arquivos: twi_points.parquet, bairros.parquet, hidro.parquet, eventos.parquet, defesa_civil.parquet"
+echo.
+call :OK "Verificacao concluida (download automatico no startup)."
 call :PAUSA_SEG 1
 goto :PASSO3
 
 
-:: ══════════════════════════════════════════════════════════════
-::  PASSO 3 — VERIFICA ESTRUTURA INTERNA DO data_V3.0
-:: ══════════════════════════════════════════════════════════════
+:: ══════════════════════════════════════════════════════════════════════════════
+::  PASSO 3 — VERIFICA ESTRUTURA DO PROJETO
+:: ══════════════════════════════════════════════════════════════════════════════
 
 :PASSO3
-call :CABECALHO_PASSO 3 "Verificando integridade de data_V3.0"
-
-set "ERROS_V2=0"
-set "ROOT_V2=%BASE_DIR%\\data_V3.0"
-
-call :CHK_PASTA_V2 "%ROOT_V2%\curated\attribute_tables"
-call :CHK_ARQ_V2   "%ROOT_V2%\curated\attribute_tables\data_table.txt"
-call :CHK_ARQ_V2   "%ROOT_V2%\curated\attribute_tables\data_table.txt.xml"
-call :CHK_ARQ_V2   "%ROOT_V2%\curated\attribute_tables\Data_Table.xls"
-call :CHK_ARQ_V2   "%ROOT_V2%\curated\attribute_tables\schema.ini"
-call :CHK_PASTA_V2 "%ROOT_V2%\curated\attribute_tables\info"
-call :CHK_ARQ_V2   "%ROOT_V2%\curated\attribute_tables\info\arc.dir"
-call :CHK_PASTA_V2 "%ROOT_V2%\raw\arcmap_exports"
-call :CHK_ARQ_V2   "%ROOT_V2%\raw\arcmap_exports\bairros_cabo_oficial.json"
-call :CHK_ARQ_V2   "%ROOT_V2%\raw\arcmap_exports\br_uf_2024.json"
-call :CHK_ARQ_V2   "%ROOT_V2%\raw\arcmap_exports\Data_Table.xls"
-call :CHK_ARQ_V2   "%ROOT_V2%\raw\arcmap_exports\mdt_points_tables.txt"
-call :CHK_ARQ_V2   "%ROOT_V2%\raw\arcmap_exports\pe_municipios_2024.json"
-call :CHK_PASTA_V2 "%ROOT_V2%\raw\apac_exports"
-call :CHK_ARQ_V2   "%ROOT_V2%\raw\apac_exports\precipitacao_pernambuco.csv"
-call :CHK_PASTA_V2 "%ROOT_V2%\raw\events"
-call :CHK_ARQ_V2   "%ROOT_V2%\raw\events\defesacivil_pe_consolidado.csv"
-call :CHK_ARQ_V2   "%ROOT_V2%\raw\events\historico_inundacoes.csv"
-call :CHK_PASTA_V2 "%ROOT_V2%\raw\qgis_exports"
-call :CHK_ARQ_V2   "%ROOT_V2%\raw\qgis_exports\Hidrografia_Pernambuco.geojson"
-
-echo.
-if !ERROS_V2! GTR 0 (
-    call :ERRO "!ERROS_V2! item(s) ausente(s) — pasta incompleta!"
-    echo.
-    call :AVISO "Corrija a estrutura de data_V3.0 e execute novamente."
-    echo.
-    pause
-    exit /b 1
-)
-call :OK "Integridade de data_V3.0\\ confirmada!"
-call :PAUSA_SEG 1
-goto :PASSO4
-
-:CHK_PASTA_V2
-if not exist "%~1\" (
-    powershell -Command "Write-Host '  X  Pasta ausente: %~nx1\' -ForegroundColor Red"
-    set /a ERROS_V2+=1
-) else (
-    powershell -Command "Write-Host '  v  ' -ForegroundColor Green -NoNewline; Write-Host '%~nx1\' -ForegroundColor Cyan"
-)
-goto :EOF
-
-:CHK_ARQ_V2
-if not exist "%~1" (
-    powershell -Command "Write-Host '       X  %~nx1  <- ausente' -ForegroundColor Red"
-    set /a ERROS_V2+=1
-) else (
-    powershell -Command "Write-Host '       v  ' -ForegroundColor Green -NoNewline; Write-Host '%~nx1' -ForegroundColor DarkGray"
-)
-goto :EOF
-
-
-:: ══════════════════════════════════════════════════════════════
-::  PASSO 4 — RENOMEIA data_V3.0 → data
-:: ══════════════════════════════════════════════════════════════
-
-:PASSO4
-call :CABECALHO_PASSO 4 "Renomeando data_V3.0 para data"
-
-if exist "%BASE_DIR%\data\" (
-    call :AVISO "Pasta data\ ja existe — rename ignorado."
-    call :PAUSA_SEG 1
-    goto :PASSO5
-)
-
-call :AGUARDANDO "Aplicando rename..."
-call :PAUSA_SEG 1
-
-rename "%BASE_DIR%\data_V3.0" "data" >nul 2>&1
-
-if !errorlevel! NEQ 0 (
-    call :ERRO "Falha ao renomear a pasta!"
-    call :AVISO "Verifique se a pasta nao esta aberta em outro programa."
-    echo.
-    pause
-    exit /b 1
-)
-
-echo.
-powershell -Command "Write-Host '  v  ' -ForegroundColor Green -NoNewline; Write-Host 'data_V3.0\\  ->  ' -ForegroundColor Yellow -NoNewline; Write-Host 'data\\' -ForegroundColor Green -NoNewline; Write-Host '  renomeada com sucesso!' -ForegroundColor DarkGray"
-call :PAUSA_SEG 1
-goto :PASSO5
-
-
-:: ══════════════════════════════════════════════════════════════
-::  PASSO 5 — ESTRUTURA COMPLETA DO PROJETO
-:: ══════════════════════════════════════════════════════════════
-
-:PASSO5
-call :CABECALHO_PASSO 5 "Verificando estrutura completa do projeto"
+call :CABECALHO_PASSO 3 "Verificando estrutura completa do projeto ASI v3.2"
 
 if exist "%STATE_FILE%" (
     findstr /c:"estrutura_ok" "%STATE_FILE%" >nul 2>&1
@@ -274,62 +174,47 @@ if exist "%STATE_FILE%" (
         call :OK "Estrutura ja validada anteriormente."
         call :INFO "Delete .asi_launcher_state para revalidar."
         call :PAUSA_SEG 1
-        goto :PASSO6
+        goto :PASSO4
     )
 )
 
 set "ERROS_ESTR=0"
 
 call :CHK_ARQ_E   "%BASE_DIR%\app.py"
-call :CHK_PASTA_E "%BASE_DIR%\data\curated\attribute_tables"
-call :CHK_ARQ_E   "%BASE_DIR%\data\curated\attribute_tables\data_table.txt"
-call :CHK_ARQ_E   "%BASE_DIR%\data\curated\attribute_tables\data_table.txt.xml"
-call :CHK_ARQ_E   "%BASE_DIR%\data\curated\attribute_tables\Data_Table.xls"
-call :CHK_ARQ_E   "%BASE_DIR%\data\curated\attribute_tables\schema.ini"
-call :CHK_PASTA_E "%BASE_DIR%\data\curated\attribute_tables\info"
-call :CHK_ARQ_E   "%BASE_DIR%\data\curated\attribute_tables\info\arc.dir"
-call :CHK_PASTA_E "%BASE_DIR%\data\raw\arcmap_exports"
-call :CHK_ARQ_E   "%BASE_DIR%\data\raw\arcmap_exports\bairros_cabo_oficial.json"
-call :CHK_ARQ_E   "%BASE_DIR%\data\raw\arcmap_exports\br_uf_2024.json"
-call :CHK_ARQ_E   "%BASE_DIR%\data\raw\arcmap_exports\Data_Table.xls"
-call :CHK_ARQ_E   "%BASE_DIR%\data\raw\arcmap_exports\mdt_points_tables.txt"
-call :CHK_ARQ_E   "%BASE_DIR%\data\raw\arcmap_exports\pe_municipios_2024.json"
-call :CHK_PASTA_E "%BASE_DIR%\data\raw\apac_exports"
-call :CHK_ARQ_E   "%BASE_DIR%\data\raw\apac_exports\precipitacao_pernambuco.csv"
-call :CHK_PASTA_E "%BASE_DIR%\data\raw\events"
-call :CHK_ARQ_E   "%BASE_DIR%\data\raw\events\defesacivil_pe_consolidado.csv"
-call :CHK_ARQ_E   "%BASE_DIR%\data\raw\events\historico_inundacoes.csv"
-call :CHK_PASTA_E "%BASE_DIR%\data\raw\qgis_exports"
-call :CHK_ARQ_E   "%BASE_DIR%\data\raw\qgis_exports\Hidrografia_Pernambuco.geojson"
-call :CHK_PASTA_E "%BASE_DIR%\docs\academic_context"
-call :CHK_ARQ_E   "%BASE_DIR%\docs\academic_context\credits.md"
-call :CHK_ARQ_E   "%BASE_DIR%\docs\academic_context\DTM_doc.md"
-call :CHK_ARQ_E   "%BASE_DIR%\docs\academic_context\institutions.md"
-call :CHK_ARQ_E   "%BASE_DIR%\docs\academic_context\project_origin.md"
-call :CHK_ARQ_E   "%BASE_DIR%\docs\academic_context\timeline.md"
-call :CHK_PASTA_E "%BASE_DIR%\docs\ethics_and_use"
-call :CHK_PASTA_E "%BASE_DIR%\docs\methodology"
-call :CHK_PASTA_E "%BASE_DIR%\docs\project_overview"
-call :CHK_ARQ_E   "%BASE_DIR%\docs\project_overview\estructure.txt.txt"
-call :CHK_PASTA_E "%BASE_DIR%\docs\roadmap"
-call :CHK_PASTA_E "%BASE_DIR%\outputs\charts"
-call :CHK_PASTA_E "%BASE_DIR%\outputs\dashboards"
-call :CHK_PASTA_E "%BASE_DIR%\outputs\maps"
-call :CHK_PASTA_E "%BASE_DIR%\outputs\reports"
-call :CHK_ARQ_E   "%BASE_DIR%\references\articles.md"
-call :CHK_ARQ_E   "%BASE_DIR%\references\links.md"
-call :CHK_ARQ_E   "%BASE_DIR%\references\technical_docs.md"
-call :CHK_PASTA_E "%BASE_DIR%\src\analysis"
-call :CHK_ARQ_E   "%BASE_DIR%\src\analysis\analytics.py"
-call :CHK_PASTA_E "%BASE_DIR%\src\dashboard"
+call :CHK_ARQ_E   "%BASE_DIR%\requirements.txt"
+call :CHK_ARQ_E   "%BASE_DIR%\pyproject.toml"
+call :CHK_PASTA_E "%BASE_DIR%\src\api"
+call :CHK_ARQ_E   "%BASE_DIR%\src\api\ibge_sidra.py"
+call :CHK_ARQ_E   "%BASE_DIR%\src\api\charts.py"
+call :CHK_PASTA_E "%BASE_DIR%\src\core"
+call :CHK_ARQ_E   "%BASE_DIR%\src\core\state.py"
+call :CHK_ARQ_E   "%BASE_DIR%\src\core\metrics.py"
+call :CHK_ARQ_E   "%BASE_DIR%\src\core\error_boundary.py"
+call :CHK_ARQ_E   "%BASE_DIR%\src\core\tracing.py"
+call :CHK_ARQ_E   "%BASE_DIR%\src\core\a11y.py"
 call :CHK_PASTA_E "%BASE_DIR%\src\processing"
-call :CHK_ARQ_E   "%BASE_DIR%\src\processing\data_loader.py"
+call :CHK_ARQ_E   "%BASE_DIR%\src\processing\data_layer.py"
 call :CHK_PASTA_E "%BASE_DIR%\src\sigweb"
-call :CHK_ARQ_E   "%BASE_DIR%\src\sigweb\components.py"
-call :CHK_ARQ_E   "%BASE_DIR%\src\sigweb\config.py"
-call :CHK_ARQ_E   "%BASE_DIR%\src\sigweb\documentation.py"
-call :CHK_ARQ_E   "%BASE_DIR%\src\sigweb\map_engine.py"
-call :CHK_ARQ_E   "%BASE_DIR%\src\sigweb\report_generator.py"
+call :CHK_PASTA_E "%BASE_DIR%\src\sigweb\ui"
+call :CHK_PASTA_E "%BASE_DIR%\src\sigweb\ui\atoms"
+call :CHK_PASTA_E "%BASE_DIR%\src\sigweb\ui\molecules"
+call :CHK_PASTA_E "%BASE_DIR%\src\sigweb\ui\organisms"
+call :CHK_PASTA_E "%BASE_DIR%\src\sigweb\ui\layouts"
+call :CHK_ARQ_E   "%BASE_DIR%\src\sigweb\ui\tokens.py"
+call :CHK_ARQ_E   "%BASE_DIR%\src\sigweb\ui\theme.py"
+call :CHK_PASTA_E "%BASE_DIR%\src\sigweb\map"
+call :CHK_ARQ_E   "%BASE_DIR%\src\sigweb\map\package.json"
+call :CHK_ARQ_E   "%BASE_DIR%\src\sigweb\map\vite.config.ts"
+call :CHK_ARQ_E   "%BASE_DIR%\src\sigweb\map\src\AsiMap.tsx"
+call :CHK_PASTA_E "%BASE_DIR%\monitoring"
+call :CHK_ARQ_E   "%BASE_DIR%\docker-compose.monitoring.yml"
+call :CHK_ARQ_E   "%BASE_DIR%\docker-compose.observability.yml"
+call :CHK_PASTA_E "%BASE_DIR%\scripts"
+call :CHK_ARQ_E   "%BASE_DIR%\scripts\convert_to_parquet.py"
+call :CHK_ARQ_E   "%BASE_DIR%\scripts\benchmark.py"
+call :CHK_PASTA_E "%BASE_DIR%\tests"
+call :CHK_ARQ_E   "%BASE_DIR%\tests\unit\test_state.py"
+call :CHK_ARQ_E   "%BASE_DIR%\docs\runbooks\incident_runbook.md"
 
 echo.
 if !ERROS_ESTR! GTR 0 (
@@ -344,7 +229,7 @@ if !ERROS_ESTR! GTR 0 (
 call :OK "Estrutura completa e integra!"
 echo estrutura_ok> "%STATE_FILE%"
 call :PAUSA_SEG 1
-goto :PASSO6
+goto :PASSO4
 
 :CHK_PASTA_E
 if not exist "%~1\" (
@@ -365,44 +250,41 @@ if not exist "%~1" (
 goto :EOF
 
 
-:: ══════════════════════════════════════════════════════════════
-::  PASSO 6 — INSTALA BIBLIOTECAS
-:: ══════════════════════════════════════════════════════════════
+:: ══════════════════════════════════════════════════════════════════════════════
+::  PASSO 4 — INSTALA DEPENDÊNCIAS PYTHON
+:: ══════════════════════════════════════════════════════════════════════════════
 
-:PASSO6
-call :CABECALHO_PASSO 6 "Instalando bibliotecas"
+:PASSO4
+call :CABECALHO_PASSO 4 "Instalando dependencias Python (requirements.txt)"
 
 if exist "%STATE_FILE%" (
-    findstr /c:"libs_ok" "%STATE_FILE%" >nul 2>&1
+    findstr /c:"deps_ok" "%STATE_FILE%" >nul 2>&1
     if !errorlevel! == 0 (
-        call :OK "Bibliotecas ja instaladas anteriormente."
+        call :OK "Dependencias ja instaladas anteriormente."
         call :INFO "Delete .asi_launcher_state para reinstalar."
         call :PAUSA_SEG 1
-        goto :PASSO7
+        goto :PASSO5
     )
 )
-
-set "REQ_FILE="
-if exist "%BASE_DIR%\requirements.txt" set "REQ_FILE=%BASE_DIR%\requirements.txt"
-if exist "%BASE_DIR%\requirements.txt"  set "REQ_FILE=%BASE_DIR%\requirements.txt"
 
 call :AGUARDANDO "Atualizando pip..."
 !PYTHON_BIN! -m pip install --upgrade pip --quiet
 call :OK "pip atualizado."
 echo.
 
-if "!REQ_FILE!"=="" (
-    call :AVISO "requirements.txt nao encontrado — instalando libs individualmente."
+if exist "%BASE_DIR%\requirements.txt" (
+    call :INFO "Usando: requirements.txt"
     echo.
-    !PYTHON_BIN! -m pip install streamlit streamlit-folium folium pyproj geopy pandas plotly
+    call :LINHA_FINA
+    echo.
+    !PYTHON_BIN! -m pip install -r "%BASE_DIR%\requirements.txt"
+    echo.
+    call :LINHA_FINA
 ) else (
-    call :INFO "Usando: !REQ_FILE!"
+    call :ERRO "requirements.txt nao encontrado!"
     echo.
-    call :LINHA_FINA
-    echo.
-    !PYTHON_BIN! -m pip install -r "!REQ_FILE!"
-    echo.
-    call :LINHA_FINA
+    pause
+    exit /b 1
 )
 
 if !errorlevel! NEQ 0 (
@@ -417,22 +299,22 @@ if !errorlevel! NEQ 0 (
 echo.
 call :OK "Instalacao concluida com sucesso!"
 call :PAUSA_SEG 1
-goto :PASSO7
+goto :PASSO5
 
 
-:: ══════════════════════════════════════════════════════════════
-::  PASSO 7 — VALIDA BIBLIOTECAS
-:: ══════════════════════════════════════════════════════════════
+:: ══════════════════════════════════════════════════════════════════════════════
+::  PASSO 5 — VALIDA BIBLIOTECAS CORE
+:: ══════════════════════════════════════════════════════════════════════════════
 
-:PASSO7
-call :CABECALHO_PASSO 7 "Validando bibliotecas instaladas"
+:PASSO5
+call :CABECALHO_PASSO 5 "Validando bibliotecas core instaladas"
 
 if exist "%STATE_FILE%" (
-    findstr /c:"libs_ok" "%STATE_FILE%" >nul 2>&1
+    findstr /c:"deps_ok" "%STATE_FILE%" >nul 2>&1
     if !errorlevel! == 0 (
         call :OK "Validacao ja realizada anteriormente."
         call :PAUSA_SEG 1
-        goto :PASSO8
+        goto :PASSO6
     )
 )
 
@@ -445,6 +327,12 @@ call :TST_LIB pyproj           pyproj
 call :TST_LIB geopy            geopy
 call :TST_LIB pandas           pandas
 call :TST_LIB plotly           plotly
+call :TST_LIB duckdb           duckdb
+call :TST_LIB polars           polars
+call :TST_LIB pyarrow          pyarrow
+call :TST_LIB geopandas        geopandas
+call :TST_LIB prometheus_client prometheus-client
+call :TST_LIB opentelemetry_api opentelemetry-api
 
 echo.
 if !FALHAS_LIB! GTR 0 (
@@ -455,13 +343,11 @@ if !FALHAS_LIB! GTR 0 (
     exit /b 1
 )
 
-call :OK "Todas as bibliotecas funcionando corretamente!"
+call :OK "Todas as bibliotecas core funcionando!"
 
-echo estrutura_ok>  "%STATE_FILE%"
-echo libs_ok>>      "%STATE_FILE%"
-
+echo deps_ok>> "%STATE_FILE%"
 call :PAUSA_SEG 1
-goto :PASSO8
+goto :PASSO6
 
 :TST_LIB
 powershell -Command "Write-Host '  ...  ' -ForegroundColor Blue -NoNewline; Write-Host 'Testando %~2...' -ForegroundColor DarkGray"
@@ -477,12 +363,133 @@ if !errorlevel! == 0 (
 goto :EOF
 
 
-:: ══════════════════════════════════════════════════════════════
-::  PASSO 8 — EXECUTAR SIGWEB
-:: ══════════════════════════════════════════════════════════════
+:: ══════════════════════════════════════════════════════════════════════════════
+::  PASSO 6 — BUILD MAPA REACT (Deck.gl + MapLibre)
+:: ══════════════════════════════════════════════════════════════════════════════
+
+:PASSO6
+call :CABECALHO_PASSO 6 "Build do componente React (Deck.gl + MapLibre)"
+
+if exist "%STATE_FILE%" (
+    findstr /c:"map_build_ok" "%STATE_FILE%" >nul 2>&1
+    if !errorlevel! == 0 (
+        call :OK "Build do mapa ja realizado anteriormente."
+        call :INFO "Delete .asi_launcher_state para rebuild."
+        call :PAUSA_SEG 1
+        goto :PASSO7
+    )
+)
+
+if not exist "%BASE_DIR%\src\sigweb\map\package.json" (
+    call :AVISO "Projeto do mapa nao encontrado — pulando build."
+    call :PAUSA_SEG 1
+    goto :PASSO7
+)
+
+call :INFO "Instalando dependencias Node.js..."
+cd /d "%BASE_DIR%\src\sigweb\map"
+where npm >nul 2>&1
+if !errorlevel! NEQ 0 (
+    call :ERRO "npm nao encontrado! Instale Node.js 18+."
+    echo.
+    pause
+    exit /b 1
+)
+
+call :AGUARDANDO "npm install..."
+npm install --silent 2>&1 | findstr /v "warn" >nul
+if !errorlevel! NEQ 0 (
+    call :ERRO "Falha no npm install!"
+    call :AVISO "Verifique conexao ou package.json."
+    cd /d "%BASE_DIR%"
+    echo.
+    pause
+    exit /b 1
+)
+
+call :OK "Dependencias Node instaladas."
+call :AGUARDANDO "Build Vite (producao)..."
+npm run build --silent 2>&1
+if !errorlevel! NEQ 0 (
+    call :ERRO "Falha no build Vite!"
+    cd /d "%BASE_DIR%"
+    echo.
+    pause
+    exit /b 1
+)
+
+call :OK "Build do mapa concluido com sucesso!"
+echo map_build_ok>> "%STATE_FILE%"
+cd /d "%BASE_DIR%"
+call :PAUSA_SEG 1
+goto :PASSO7
+
+
+:: ══════════════════════════════════════════════════════════════════════════════
+::  PASSO 7 — TESTES UNITARIOS
+:: ══════════════════════════════════════════════════════════════════════════════
+
+:PASSO7
+call :CABECALHO_PASSO 7 "Executando testes unitarios (pytest)"
+
+call :AGUARDANDO "Rodando pytest..."
+!PYTHON_BIN! -m pytest tests/ -v --tb=short 2>&1 | findstr /r /c:"passed" /c:"failed" /c:"error"
+if !errorlevel! NEQ 0 (
+    call :ERRO "Testes falharam!"
+    echo.
+    pause
+    exit /b 1
+)
+
+call :OK "Todos os testes passaram!"
+call :PAUSA_SEG 1
+goto :PASSO8
+
+
+:: ══════════════════════════════════════════════════════════════════════════════
+::  PASSO 8 — STACK DE OBSERVABILIDADE (Docker Compose)
+:: ══════════════════════════════════════════════════════════════════════════════
 
 :PASSO8
-call :CABECALHO_PASSO 8 "Iniciar o SIGWeb"
+call :CABECALHO_PASSO 8 "Verificando stack de observabilidade (Docker)"
+
+where docker >nul 2>&1
+if !errorlevel! NEQ 0 (
+    call :AVISO "Docker nao encontrado — stack de observabilidade nao sera iniciada."
+    call :INFO "Instale Docker Desktop para habilitar: Prometheus, Grafana, Tempo, Loki, Pyroscope, Alertmanager."
+    call :PAUSA_SEG 2
+    goto :PASSO9
+)
+
+where docker-compose >nul 2>&1
+if !errorlevel! NEQ 0 (
+    call :AVISO "docker-compose nao encontrado."
+    call :PAUSA_SEG 1
+    goto :PASSO9
+)
+
+call :INFO "Docker detectado. Stack disponivel:"
+call :INFO "  - Prometheus (9090) + Alertmanager (9093)"
+call :INFO "  - Grafana (3000) + Loki (3100) + Promtail"
+call :INFO "  - OpenTelemetry Collector (4317/4318) + Tempo (3200)"
+call :INFO "  - Pyroscope (4040) + Node Exporter (9100)"
+echo.
+call :AVISO "Para iniciar a stack completa:"
+call :INFO "  docker-compose -f docker-compose.monitoring.yml up -d"
+call :AVISO "Para stack estendida (Tracing + Profiling):"
+call :INFO "  docker-compose -f docker-compose.observability.yml up -d"
+echo.
+call :OK "Docker disponivel. Stack pronta para uso."
+call :PAUSA_SEG 1
+goto :PASSO9
+
+
+:: ══════════════════════════════════════════════════════════════════════════════
+::  PASSO 9 — EXECUTAR SIGWEB
+:: ══════════════════════════════════════════════════════════════════════════════
+
+:PASSO9
+call :CABECALHO_PASSO 9 "Iniciar o SIGWeb ASI v3.2"
 
 if not exist "%BASE_DIR%\app.py" (
     call :ERRO "app.py nao encontrado na raiz do projeto!"
@@ -496,41 +503,19 @@ echo.
 powershell -Command "Write-Host '  Comando que sera executado:' -ForegroundColor DarkGray"
 powershell -Command "Write-Host '    streamlit run app.py' -ForegroundColor Cyan"
 echo.
+powershell -Command "Write-Host '  URLs de acesso:' -ForegroundColor DarkGray"
+powershell -Command "Write-Host '    Local:      http://localhost:8501' -ForegroundColor Cyan"
+powershell -Command "Write-Host '    Network:    http://<seu-ip>:8501' -ForegroundColor Cyan"
+powershell -Command "Write-Host '    Health:     http://localhost:8501/?_health=1' -ForegroundColor Cyan"
+echo.
 call :LINHA_FINA
 echo.
+call :INFO "Pressione ENTER para iniciar o ASI..."
+pause >nul
 
-set /p "RESPOSTA=  Deseja iniciar o SIGWeb agora? [S/n]: "
-echo.
-
-if /i "!RESPOSTA!"=="n"   goto :NAO_EXEC
-if /i "!RESPOSTA!"=="nao" goto :NAO_EXEC
-if /i "!RESPOSTA!"=="no"  goto :NAO_EXEC
-
-powershell -Command "Write-Host '  ...  Iniciando servidor Streamlit...' -ForegroundColor Blue"
-call :PAUSA_SEG 2
-echo.
-call :OK "Abrindo o navegador... SIGWeb esta subindo!"
-call :INFO "Para encerrar, feche esta janela ou pressione Ctrl+C."
-echo.
 call :LINHA
 echo.
+streamlit run app.py --server.port 8501 --server.address 0.0.0.0
 
-cd /d "%BASE_DIR%"
-!PYTHON_BIN! -m streamlit run app.py
-
-echo.
-call :LINHA
-echo.
-powershell -Command "Write-Host '  Aplicacao encerrada.' -ForegroundColor Yellow"
-echo.
-pause
-exit /b 0
-
-:NAO_EXEC
-call :INFO "Para iniciar manualmente, execute:"
-call :INFO "streamlit run app.py"
-echo.
-call :LINHA
-echo.
-pause
+:: Fim do script
 exit /b 0

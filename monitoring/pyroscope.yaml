@@ -1,0 +1,30 @@
+server:
+  http_listen_port: 4040
+  grpc_listen_port: 4041
+
+storage:
+  type: filesystem
+  path: /var/lib/pyroscope
+
+ingester:
+  max_block_duration: 1h
+  max_block_bytes: 1048576
+
+querier:
+  max_block_duration: 1h
+
+compactor:
+  compaction:
+    block_retention: 7d
+
+storage:
+  type: filesystem
+  path: /var/lib/pyroscope
+
+# For production, consider S3:
+# storage:
+#   type: s3
+#   s3:
+#     bucket: pyroscope-profiles
+#     region: us-east-1
+#     endpoint: s3.amazonaws.com
