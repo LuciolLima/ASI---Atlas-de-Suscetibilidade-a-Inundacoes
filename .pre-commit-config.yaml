@@ -1,0 +1,73 @@
+# .pre-commit-config.yaml — Hooks de Qualidade Pré-Commit ASI
+
+repos:
+  # Ruff — Linting + Formatação (substitui flake8, black, isort, pyupgrade, etc.)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.7
+    hooks:
+      - id: ruff
+        name: Ruff Check (with auto-fix)
+        args: [--fix, --exit-non-zero-on-fix, --show-fixes]
+        types_or: [python, pyi]
+      - id: ruff-format
+        name: Ruff Format
+        types_or: [python, pyi]
+
+  # MyPy — Type Checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.2
+    hooks:
+      - id: mypy
+        name: MyPy Type Check
+        additional_dependencies:
+          - types-requests>=2.31
+          - pandas-stubs>=2.2
+        args: [--strict, --show-error-codes, --pretty]
+        types_or: [python, pyi]
+        pass_filenames: false  # MyPy needs whole project context
+
+  # Verificação de arquivos grandes (evita binários acidentais)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-toml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  # Validação de JSON (schemas, configs)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-json
+
+  # Bandit — Security linting (opcional, mas recomendado)
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.8
+    hooks:
+      - id: bandit
+        name: Bandit Security Check
+        args: [-r, src/, -ll, -f, txt]
+        types_or: [python]
+        # Ignorar alguns falsos positivos comuns em Streamlit
+        exclude: ^tests/
+
+  # Detecção de secrets (chaves, tokens) — Gitleaks
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.0
+    hooks:
+      - id: gitleaks
+        name: Gitleaks Secret Scan
+        args: [--no-banner, --verbose]
+
+  # Validação de requisitos (requirements.txt vs pyproject.toml)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-requirements
+        # Não existe nativamente, mas podemos adicionar script customizado se necessário

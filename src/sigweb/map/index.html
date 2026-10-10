@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AsiMap</title>
+  <style>
+    html, body, #root {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    .asi-map-container {
+      width: 100%;
+      height: 100%;
+    }
+    .asi-tooltip {
+      position: fixed;
+      pointer-events: none;
+      z-index: 600;
+      background: rgba(13, 18, 25, 0.95);
+      border: 1px solid #2e4a64;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font: 12px 'IBM Plex Mono', monospace;
+      color: #c8d6e0;
+      display: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <div id="asi-tooltip" class="asi-tooltip" style="display:none;"></div>
+  <script type="module" src="/src/main.tsx"></script>
+  <script>
+    // Bridge Streamlit → React
+    window.addEventListener('message', (event) => {
+      if (event.data?.type === 'streamlit:setComponentValue') {
+        window.__ASI_MAP_PROPS__ = event.data.value
+        if (window.__ASI_MAP_RELOAD__) window.__ASI_MAP_RELOAD__()
+      }
+    })
+
+    // Envia resultado de volta pro Streamlit
+    window.sendToStreamlit = (type, value) => {
+      window.parent.postMessage({
+        type: 'streamlit:setComponentValue',
+        value: { type, value, source: 'asi-map' }
+      }, '*')
+    }
+  </script>
+</body>
+</html>

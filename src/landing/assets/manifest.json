@@ -1,0 +1,21 @@
+{
+  "name": "ASI — Atlas de Suscetibilidade a Inundações",
+  "short_name": "ASI",
+  "description": "SIGWeb para modelagem de suscetibilidade a inundações via Topographic Wetness Index (TWI) em Cabo de Santo Agostinho, PE.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080C10",
+  "theme_color": "#080C10",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "asi-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "science", "utilities"],
+  "lang": "pt-BR",
+  "dir": "ltr"
+}

@@ -1,0 +1,205 @@
+groups:
+  - name: asi-alerts
+    interval: 30s
+    rules:
+      # ── High Latency ──
+      - alert: ASI_HighClickLatency
+        expr: histogram_quantile(0.95, rate(asi_click_duration_ms_bucket[5m])) > 500
+        for: 5m
+        labels:
+          severity: warning
+          component: map
+        annotations:
+          summary: "High map click latency (P95 > 500ms)"
+          description: "Map click P95 latency is {{ $value | printf \"%.0f\" }}ms for 5 minutes. Boundary: {{ $labels.boundary }}"
+          runbook_url: "https://github.com/your-org/asi/blob/main/docs/runbooks/incident_runbook.md#inc-002-duckdb-spatial-query-latency-spike"
+
+      - alert: ASI_CriticalClickLatency
+        expr: histogram_quantile(0.95, rate(asi_click_duration_ms_bucket[5m])) > 1000
+        for: 2m
+        labels:
+          severity: critical
+          component: map
+        annotations:
+          summary: "Critical map click latency (P95 > 1s)"
+          description: "Map click P95 latency is {{ $value | printf \"%.0f\" }}ms. Immediate investigation required."
+
+      # ── High Error Rate ──
+      - alert: ASI_HighErrorRate
+        expr: rate(asi_errors_total[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+          component: "{{ $labels.boundary }}"
+        annotations:
+          summary: "High error rate in {{ $labels.boundary }}"
+          description: "Error rate is {{ $value | printf \"%.2f\" }} req/s for 3 minutes."
+
+      - alert: ASI_CriticalErrorRate
+        expr: rate(asi_errors_total[5m]) > 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical error rate"
+          description: "Error rate is {{ $value | printf \"%.2f\" }} req/s. Immediate investigation required."
+
+      # ── Low Cache Hit Rate ──
+      - alert: ASI_LowCacheHitRate
+        expr: (asi_cache_hits_total / (asi_cache_hits_total + asi_cache_misses_total)) < 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low cache hit rate (< 80%)"
+          description: "Cache hit rate is {{ $value | printf \"%.1f\" }}% for 10 minutes. Consider increasing TTL or cache size."
+
+      - alert: ASI_CriticalCacheHitRate
+        expr: (asi_cache_hits_total / (asi_cache_hits_total + asi_cache_misses_total)) < 0.5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical cache hit rate (< 50%)"
+          description: "Cache hit rate is {{ $value | printf \"%.1f\" }}%. Immediate investigation required."
+
+      # ── High Memory Usage ──
+      - alert: ASI_HighMemoryUsage
+        expr: (process_resident_memory_bytes / 1024 / 1024 / 1024) > 1.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage (> 1.5GB)"
+          description: "Process memory is {{ $value | printf \"%.1f\" }}GB. Limit is 2GB."
+
+      - alert: ASI_CriticalMemoryUsage
+        expr: (process_resident_memory_bytes / 1024 / 1024 / 1024) > 1.8
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical memory usage (> 1.8GB)"
+          description: "Process memory is {{ $value | printf \"%.1f\" }}GB. Near OOM limit."
+
+      # ── High Memory Growth ──
+      - alert: ASI_MemoryLeak
+        expr: (process_resident_memory_bytes - process_resident_memory_bytes offset 1h) > 100 * 1024 * 1024
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Possible memory leak detected"
+          description: "Memory grew by > 100MB in the last hour."
+
+      # ── High API Latency ──
+      - alert: ASI_HighAPILatency
+        expr: histogram_quantile(0.95, rate(asi_api_request_duration_seconds_bucket[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: "{{ $labels.api }}"
+        annotations:
+          summary: "High API latency for {{ $labels.api }} (P95 > 5s)"
+          description: "API {{ $labels.api }} P95 latency is {{ $value | printf \"%.1f\" }}s."
+
+      - alert: ASI_CriticalAPILatency
+        expr: histogram_quantile(0.95, rate(asi_api_request_duration_seconds_bucket[5m])) > 15
+        for: 2m
+        labels:
+          severity: critical
+          component: "{{ $labels.api }}"
+        annotations:
+          summary: "Critical API latency for {{ $labels.api }} (P95 > 15s)"
+          description: "API {{ $labels.api }} P95 latency is {{ $value | printf \"%.1f\" }}s."
+
+      # ── High API Error Rate ──
+      - alert: ASI_HighAPIErrorRate
+        expr: rate(asi_api_errors_total[5m]) > 0.05
+        for: 3m
+        labels:
+          severity: warning
+          component: "{{ $labels.api }}"
+        annotations:
+          summary: "High API error rate for {{ $labels.api }}"
+          description: "Error rate is {{ $value | printf \"%.2f\" }} req/s."
+
+      # ── Unhandled Exceptions ──
+      - alert: ASI_UnhandledExceptions
+        expr: rate(asi_unhandled_exceptions_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Unhandled exception detected"
+          description: "An unhandled exception occurred. Check logs immediately."
+
+      # ── Cache Miss Storm ──
+      - alert: ASI_CacheMissStorm
+        expr: rate(asi_cache_misses_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Cache miss storm (> 100 misses/sec)"
+          description: "Cache misses are {{ $value | printf \"%.0f\" }}/sec. Possible cache invalidation or cold start."
+
+      # ── Streamlit Process Down ──
+      - alert: ASI_StreamlitDown
+        expr: up{job="asi"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ASI Streamlit instance down"
+          description: "Streamlit process is not running. Immediate restart required."
+
+      # ── Disk Space ──
+      - alert: ASI_DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space (< 10% free)"
+          description: "Disk usage is {{ $value | printf \"%.1f\" }}% full."
+
+      - alert: ASI_CriticalDiskSpace
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical disk space (< 5% free)"
+          description: "Disk usage is {{ $value | printf \"%.1f\" }}% full. Immediate cleanup required."
+
+      # ── CPU Saturation ──
+      - alert: ASI_HighCPUUsage
+        expr: (rate(process_cpu_seconds_total[5m]) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage (> 80%)"
+          description: "CPU usage is {{ $value | printf \"%.1f\" }}%."
+
+      # ── GeoParquet Files Missing ──
+      - alert: ASI_GeoParquetMissing
+        expr: asi_geoparquet_files_total < 5
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "GeoParquet files missing"
+          description: "Only {{ $value }} GeoParquet files found. Expected 5 (twi_points, bairros, hidro, eventos, defesa_civil)."
+
+      # ── API External Failures ──
+      - alert: ASI_ExternalAPIFailures
+        expr: rate(asi_external_api_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: "{{ $labels.api }}"
+        annotations:
+          summary: "External API failures for {{ $labels.api }}"
+          description: "Failure rate is {{ $value | printf \"%.2f\" }} req/s."

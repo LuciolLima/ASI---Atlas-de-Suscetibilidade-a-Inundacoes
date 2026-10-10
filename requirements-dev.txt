@@ -1,0 +1,27 @@
+# requirements-dev.txt — Dependências de Desenvolvimento ASI
+# Instalar com: pip install -r requirements-dev.txt
+# Ou: pip install -e ".[dev]"
+
+# --- Testing ---
+pytest>=8.0
+pytest-cov>=4.1
+
+# --- Linting & Formatting ---
+ruff>=0.5.0
+
+# --- Type Checking ---
+mypy>=1.10
+pandas-stubs>=2.2
+types-requests>=2.31
+
+# --- Data Validation ---
+pandera>=0.19
+
+# --- Contracts (Runtime) ---
+icontract>=2.7
+
+# --- Security ---
+bandit>=1.7
+
+# --- Pre-commit ---
+pre-commit>=3.6

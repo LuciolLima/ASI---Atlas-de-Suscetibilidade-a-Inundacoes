@@ -1,0 +1,76 @@
+# Prometheus Configuration for ASI
+
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+  external_labels:
+    cluster: 'asi-production'
+    environment: 'production'
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+rule_files:
+  - "/etc/prometheus/rules/*.yml"
+
+scrape_configs:
+  # ASI Application Metrics
+  - job_name: 'asi-app'
+    static_configs:
+      - targets: ['asi-app:8501']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+  # ASI Streamlit Health
+  - job_name: 'asi-health'
+    static_configs:
+      - targets: ['asi-app:8501']
+    metrics_path: '/_health'
+    scrape_interval: 30s
+
+  # Node Exporter (Host Metrics)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # Prometheus Self-Monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Alertmanager
+  - job_name: 'alertmanager'
+    static_configs:
+      - targets: ['alertmanager:9093']
+
+  # OTLP Receiver (if using OTLP directly)
+  - job_name: 'otel-collector'
+    static_configs:
+      - targets: ['otel-collector:8889']
+    metrics_path: '/metrics'
+
+remote_write:
+  - url: "http://cortex:9009/api/v1/push"
+    queue_config:
+      max_samples_per_send: 1000
+      max_shards: 10
+      capacity: 10000
+
+remote_read:
+  - url: "http://cortex:9009/api/v1/read"
+    read_recent: true
+
+storage:
+  tsdb:
+    retention_time: 30d
+    retention_size: 50GB
+    wal_compression: true
+
+# Web UI
+web:
+  enable_admin_api: true
+  enable_lifecycle: true

@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="ASI Atlas de Suscetibilidade a Inundações - Open Graph Image">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#080C10"/>
+      <stop offset="50%" stop-color="#0A0F14"/>
+      <stop offset="100%" stop-color="#080C10"/>
+    </linearGradient>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2E86C1"/>
+      <stop offset="100%" stop-color="#00B4D8"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2E86C1"/>
+      <stop offset="100%" stop-color="#00B4D8"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+  
+  <!-- Decorative grid pattern -->
+  <g stroke="url(#accentGrad)" stroke-width="0.5" opacity="0.06">
+    <path d="M0 0 h1200 v630 h-1200z" fill="none"/>
+    <g stroke-width="0.3">
+      <!-- Grid lines suggesting geospatial data -->
+      <line x1="100" y1="0" x2="100" y2="630"/>
+      <line x1="300" y1="0" x2="300" y2="630"/>
+      <line x1="500" y1="0" x2="500" y2="630"/>
+      <line x1="700" y1="0" x2="700" y2="630"/>
+      <line x1="900" y1="0" x2="900" y2="630"/>
+      <line x1="1100" y1="0" x2="1100" y2="630"/>
+      <line x1="0" y1="100" x2="1200" y2="100"/>
+      <line x1="0" y1="250" x2="1200" y2="250"/>
+      <line x1="0" y1="400" x2="1200" y2="400"/>
+      <line x1="0" y1="550" x2="1200" y2="550"/>
+    </g>
+  </g>
+  
+  <!-- Radial glow accents -->
+  <circle cx="200" cy="150" r="180" fill="url(#accentGrad)" opacity="0.04" filter="url(#glow)"/>
+  <circle cx="1000" cy="480" r="220" fill="url(#accentGrad)" opacity="0.03" filter="url(#glow)"/>
+  
+  <!-- Main content -->
+  <g transform="translate(600, 315)" text-anchor="middle">
+    <!-- Logo -->
+    <g filter="url(#glow)">
+      <path d="M0 -50 L-35 -10 v40 l50 35 50-35 v-40 Z" fill="none" stroke="url(#logoGrad)" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M0 -20 v40 M-30 10 h60" stroke="url(#logoGrad)" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+    </g>
+    
+    <!-- Title -->
+    <text x="0" y="70" font-family="IBM Plex Mono, monospace" font-size="48" font-weight="600" fill="#E8EBF0" letter-spacing="-1">ASI</text>
+    <text x="0" y="125" font-family="IBM Plex Sans, sans-serif" font-size="28" font-weight="300" fill="#B8C0CC">Atlas de Suscetibilidade a Inundações</text>
+    
+    <!-- Subtitle -->
+    <text x="0" y="175" font-family="IBM Plex Sans, sans-serif" font-size="18" font-weight="300" fill="#8B95A3" opacity="0.9">Topographic Wetness Index (TWI) · Cabo de Santo Agostinho, PE</text>
+    
+    <!-- Version badge -->
+    <g transform="translate(0, 230)">
+      <rect x="-55" y="-18" width="110" height="36" rx="18" fill="url(#logoGrad)"/>
+      <text x="0" y="6" font-family="IBM Plex Mono, monospace" font-size="14" font-weight="500" fill="#040608">v3.0</text>
+    </g>
+    
+    <!-- Tech badges -->
+    <g transform="translate(0, 290)" font-family="IBM Plex Mono, monospace" font-size="12" fill="#8="#8="#5A6573">
+      <g transform="translate(-180, 0)">
+        <rect x="-50" y="-14" width="100" height="28" rx="4" fill="#141E2A" stroke="#1E2A3A"/>
+        <text x="0" y="4" fill="#2E86C1" text-anchor="middle">Streamlit</text>
+      </g>
+      <g transform="translate(0, 0)">
+        <rect x="-40" y="-14" width="80" height="28" rx="4" fill="#141E2A" stroke="#1E2A3A"/>
+        <text x="0" y="4" fill="#00B4D8" text-anchor="middle">Folium</text>
+      </g>
+      <g transform="translate(180, 0)">
+        <rect x="-45" y="-14" width="90" height="28" rx="4" fill="#141E2A" stroke="#1E2A3A"/>
+        <text x="0" y="4" fill="#FFD700" text-anchor="middle">PyProj</text>
+      </g>
+    </g>
+    
+    <!-- Bottom attribution -->
+    <text x="0" y="360" font-family="IBM Plex Sans, sans-serif" font-size="14" font-weight="300" fill="#5A6573">Desenvolvido por Lúcio Lima · Orientação: Dr. Renilson Ramos · FACEPE / CNPq</text>
+  </g>
+  
+  <!-- Bottom accent line -->
+  <line x1="200" y1="580" x2="1000" y2="580" stroke="url(#accentGrad)" stroke-width="2" opacity="0.5"/>
+</svg>

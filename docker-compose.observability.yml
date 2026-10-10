@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # ─── Tempo (Distributed Tracing) ───
+  tempo:
+    image: grafana/tempo:2.4.0
+    command:
+      - '-config.file=/etc/tempo.yaml'
+    volumes:
+      - ./monitoring/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    ports:
+      - "3200:3200"   # Tempo HTTP
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "9411:9411"   # Zipkin
+    command:
+      - '-config.file=/etc/tempo.yaml'
+
+  # ─── Pyroscope (Continuous Profiling) ───
+  pyroscope:
+    image: grafana/pyroscope:1.4.0
+    volumes:
+      - ./monitoring/pyroscope.yaml:/etc/pyroscope/pyroscope.yml:ro
+      - pyroscope-data:/var/lib/pyroscope
+    ports:
+      - "4040:4040"
+    command:
+      - '-config.file=/etc/pyroscope/pyroscope.yml'
+
+volumes:
+  tempo-data:
+  pyroscope-data:

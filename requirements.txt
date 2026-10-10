@@ -1,0 +1,46 @@
+# ══════════════════════════════════════════════════════════════
+#  ASI | Atlas de Suscetibilidade a Inundações
+#  Dependências do Projeto - requirements.txt
+#  Python >= 3.12 recomendado
+# ══════════════════════════════════════════════════════════════
+
+# --- Interface Web (SIGWeb / Dashboard) ---
+streamlit>=1.35.0           # Framework principal da aplicação
+streamlit-folium>=0.20.0    # Integração Folium ↔ Streamlit
+
+# --- Cartografia e Geoprocessamento ---
+folium>=0.16.0              # Renderização de mapas interativos (Leaflet.js)
+pyproj>=3.6.0               # Reprojeção de coordenadas (UTM ↔ WGS84)
+geopy>=2.4.0                # Cálculo de distâncias geodésicas (buffer 500m)
+
+# --- Manipulação e Análise de Dados ---
+pandas>=2.2.0               # ETL, filtragem e classificação vetorial
+numpy>=1.26.0               # Computação numérica (analytics, testes, geoestatística)
+
+# --- Dados Geoespaciais Avançados (v3.2+) ---
+duckdb>=1.1.0               # OLAP colunar para queries espaciais sub-ms
+polars>=1.10.0              # DataFrames rápidos (LazyFrame, expressions)
+pyarrow>=17.0.0             # Backend Apache Arrow (Parquet, GeoParquet)
+geopandas>=1.0.0            # GeoDataFrames, operações espaciais vetoriais
+
+# --- Validação de Dados e Schemas ---
+pandera>=0.19               # Validação de DataFrames com schemas (Pandera)
+
+# --- Visualização Estatística ---
+plotly>=5.22.0              # Gráficos interativos (pizza, histograma, scatter, bar)
+
+# --- Integração com APIs Externas ---
+requests>=2.31.0            # Requisições HTTP (Open-Meteo, NASA POWER, IBGE SIDRA)
+urllib3>=2.0.0              # Utilitários HTTP (retry strategy, connection pooling)
+
+# --- Acesso a Dados Socioeconômicos ---
+sidrapy>=0.1.4              # Acesso à API do SIDRA/IBGE (dados censitários, saneamento)
+
+# --- Observabilidade e Métricas (v3.2+) ---
+prometheus-client>=0.20.0   # Métricas Prometheus /health, /metrics
+opentelemetry-api>=1.25.0   # OpenTelemetry API (tracing, metrics)
+opentelemetry-sdk>=1.25.0   # OpenTelemetry SDK
+opentelemetry-exporter-otlp>=1.25.0  # OTLP exporter (Tempo, Loki)
+
+# --- Utilitários ---
+gdown>=4.7.1                # Download de arquivos do GitHub Releases (dados geoespaciais pré-processados do ASI)
